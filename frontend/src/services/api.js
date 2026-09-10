@@ -1,0 +1,91 @@
+const API_BASE_URL = 'http://localhost:8000'
+
+function getToken() {
+  return localStorage.getItem('token')
+}
+
+/**
+ * Thin wrapper around fetch. Centralizes: base URL, JSON body encoding,
+ * attaching the Authorization header when needed, and turning FastAPI's
+ * {"detail": "..."} error shape into a normal thrown Error so every
+ * page can just `catch (err) { setError(err.message) }`.
+ */
+async function request(path, { method = 'GET', body, auth = false, form = false } = {}) {
+  const headers = {}
+  if (!form) headers['Content-Type'] = 'application/json'
+  if (auth) {
+    const token = getToken()
+    if (token) headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers,
+    body: form ? body : body ? JSON.stringify(body) : undefined,
+  })
+
+  if (!response.ok) {
+    let detail = `Request failed (${response.status})`
+    try {
+      const errorBody = await response.json()
+      if (errorBody.detail) detail = errorBody.detail
+    } catch {
+      // Response wasn't JSON -- fall back to the generic message above.
+    }
+    throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail))
+  }
+
+  if (response.status === 204) return null
+  return response.json()
+}
+
+export const api = {
+  register: (name, email, password) =>
+    request('/auth/register', { method: 'POST', body: { name, email, password } }),
+
+  login: (email, password) => {
+    // The backend's /auth/login expects OAuth2 form-encoded fields
+    // (username/password), not JSON -- see backend/app/routers/auth.py.
+    const form = new URLSearchParams()
+    form.set('username', email)
+    form.set('password', password)
+    return request('/auth/login', { method: 'POST', body: form, form: true })
+  },
+
+  getCurrentUser: () => request('/auth/me', { auth: true }),
+
+  listMovies: () => request('/movies'),
+  getMovie: (id) => request(`/movies/${id}`),
+
+  listTheaters: () => request('/theaters'),
+  getTheater: (id) => request(`/theaters/${id}`),
+
+  listShowtimes: () => request('/showtimes'),
+  getShowtime: (id) => request(`/showtimes/${id}`),
+  getShowtimeSeats: (id) => request(`/showtimes/${id}/seats`),
+
+  createBooking: (showtimeId, seatIds) =>
+    request('/bookings', {
+      method: 'POST',
+      auth: true,
+      body: { showtime_id: showtimeId, seat_ids: seatIds },
+    }),
+  getBooking: (id) => request(`/bookings/${id}`, { auth: true }),
+  listMyBookings: () => request('/bookings', { auth: true }),
+  cancelBooking: (id) => request(`/bookings/${id}/cancel`, { method: 'POST', auth: true }),
+  listAdminBookings: () => request('/admin/bookings', { auth: true }),
+
+  createMovie: (payload) => request('/movies', { method: 'POST', auth: true, body: payload }),
+  updateMovie: (id, payload) => request(`/movies/${id}`, { method: 'PUT', auth: true, body: payload }),
+  deleteMovie: (id) => request(`/movies/${id}`, { method: 'DELETE', auth: true }),
+
+  createTheater: (payload) => request('/theaters', { method: 'POST', auth: true, body: payload }),
+  updateTheater: (id, payload) =>
+    request(`/theaters/${id}`, { method: 'PUT', auth: true, body: payload }),
+  deleteTheater: (id) => request(`/theaters/${id}`, { method: 'DELETE', auth: true }),
+
+  createShowtime: (payload) => request('/showtimes', { method: 'POST', auth: true, body: payload }),
+  updateShowtime: (id, payload) =>
+    request(`/showtimes/${id}`, { method: 'PUT', auth: true, body: payload }),
+  deleteShowtime: (id) => request(`/showtimes/${id}`, { method: 'DELETE', auth: true }),
+}

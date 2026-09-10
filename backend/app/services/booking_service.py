@@ -23,6 +23,7 @@ def serialize_booking(booking: Booking) -> BookingOut:
     """
     return BookingOut(
         id=booking.id,
+        user_id=booking.user_id,
         showtime_id=booking.showtime_id,
         status=booking.status,
         total_seats=booking.total_seats,

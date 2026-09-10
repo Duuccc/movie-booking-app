@@ -27,6 +27,7 @@ class BookingSeatOut(BaseModel):
 
 class BookingOut(BaseModel):
     id: int
+    user_id: int
     showtime_id: int
     status: BookingStatus
     total_seats: int
