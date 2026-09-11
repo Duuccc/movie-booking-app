@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
     }
     api
       .getCurrentUser()
-      .then(setUser)
+      .then((user) => {setUser(user)})
       .catch(() => {
         // Token is invalid or expired -- clear it rather than staying
         // "logged in" in the UI with a token that no longer works.
