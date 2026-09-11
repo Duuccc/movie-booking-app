@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { api } from '../services/api'
+import PosterImage from '../components/PosterImage'
 
 function MovieDetailsPage() {
   const { movieId } = useParams()
@@ -24,7 +25,11 @@ function MovieDetailsPage() {
     <div style={styles.container}>
       <Link to="/">&larr; Back to movies</Link>
       <div style={styles.layout}>
-        <img src={movie.poster_url} alt={movie.title} style={styles.poster} />
+        <PosterImage
+          posterUrl={movie.poster_url}
+          title={movie.title}
+          style={styles.poster}
+        />
         <div>
           <h1 style={styles.title}>{movie.title}</h1>
           <p style={styles.meta}>
@@ -44,7 +49,7 @@ const styles = {
   status: { textAlign: 'center', marginTop: '3rem' },
   container: { maxWidth: '800px', margin: '0 auto', padding: '1.5rem' },
   layout: { display: 'flex', gap: '2rem', marginTop: '1rem' },
-  poster: { width: '220px', borderRadius: '8px', objectFit: 'cover' },
+  poster: { width: '220px', height: '330px', borderRadius: '8px' },
   title: { marginTop: 0 },
   meta: { color: '#666' },
   showtimesButton: {

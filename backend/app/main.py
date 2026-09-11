@@ -7,6 +7,7 @@ reach the database.
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.database import engine
@@ -16,6 +17,8 @@ from app.routers import theaters as theaters_router
 from app.routers import showtimes as showtimes_router
 from app.routers import bookings as bookings_router
 from app.routers import admin as admin_router
+
+from pathlib import Path
 
 app = FastAPI(
     title="Movie Booking API",
@@ -31,6 +34,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+(STATIC_DIR/"posters").mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 app.include_router(auth_router.router)
 app.include_router(movies_router.router)

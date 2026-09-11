@@ -1,4 +1,16 @@
-const API_BASE_URL = 'http://localhost:8000'
+export const API_BASE_URL = 'http://localhost:8000'
+
+/**
+ * poster_url from the backend is either a relative path under our own
+ * /static/posters/ (from an upload) or a full external URL (an admin
+ * pasted one in directly). Resolve it to something an <img> can use,
+ * or null if there's no poster at all.
+ */
+export function resolvePosterUrl(posterUrl) {
+  if (!posterUrl) return null
+  if (posterUrl.startsWith('http://') || posterUrl.startsWith('https://')) return posterUrl
+  return `${API_BASE_URL}${posterUrl}`
+}
 
 function getToken() {
   return localStorage.getItem('token')
@@ -78,6 +90,14 @@ export const api = {
   createMovie: (payload) => request('/movies', { method: 'POST', auth: true, body: payload }),
   updateMovie: (id, payload) => request(`/movies/${id}`, { method: 'PUT', auth: true, body: payload }),
   deleteMovie: (id) => request(`/movies/${id}`, { method: 'DELETE', auth: true }),
+  uploadMoviePoster: (movieId, file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    // form: true skips the JSON Content-Type header -- the browser sets
+    // its own "multipart/form-data; boundary=..." header for FormData,
+    // and setting one manually would break the upload.
+    return request(`/movies/${movieId}/poster`, { method: 'POST', auth: true, body: formData, form: true })
+  },
 
   createTheater: (payload) => request('/theaters', { method: 'POST', auth: true, body: payload }),
   updateTheater: (id, payload) =>

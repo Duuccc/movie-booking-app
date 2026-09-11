@@ -14,6 +14,7 @@ from app.database import get_db
 from app.models.theater import Theater
 from app.schemas.theater import TheaterCreate, TheaterUpdate, TheaterOut
 from app.auth.dependencies import require_admin
+from app.services.booking_service import theater_has_confirmed_bookings
 
 router = APIRouter(prefix="/theaters", tags=["theaters"])
 
@@ -70,6 +71,11 @@ def delete_theater(
     _admin=Depends(require_admin),
 ):
     theater = get_theater_or_404(theater_id, db)
+    if theater_has_confirmed_bookings(db, theater_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete a theater with active bookings against its showtimes",
+        )
     db.delete(theater)
     db.commit()
     return None

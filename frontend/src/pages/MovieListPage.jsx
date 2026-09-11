@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../services/api'
+import PosterImage from '../components/PosterImage'
 
 function MovieListPage() {
   const [movies, setMovies] = useState([])
@@ -23,7 +24,7 @@ function MovieListPage() {
     <div style={styles.grid}>
       {movies.map((movie) => (
         <Link to={`/movies/${movie.id}`} key={movie.id} style={styles.card}>
-          <img src={movie.poster_url} alt={movie.title} style={styles.poster} />
+          <PosterImage posterUrl={movie.poster_url} title={movie.title} style={styles.poster} />
           <div style={styles.cardBody}>
             <h3 style={styles.title}>{movie.title}</h3>
             <p style={styles.meta}>{movie.genre} · {movie.duration} min</p>

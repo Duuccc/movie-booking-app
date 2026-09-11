@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api } from '../services/api'
+import PosterImage from '../components/PosterImage'
 
 const emptyForm = { title: '', description: '', duration: '', genre: '', release_date: '', poster_url: '' }
 
@@ -10,6 +11,16 @@ function AdminMoviesPage() {
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  // Which movie's "Upload Poster" button was clicked -- the hidden file
+  // input below is shared across every row, so we track which row it's
+  // currently acting on rather than rendering one input per row.
+  const [uploadingForId, setUploadingForId] = useState(null)
+  const fileInputRef = useRef(null)
+  // Tracks whether the file input's onChange actually fired (a file was
+  // chosen), so the window-focus-based cancel detection below (see
+  // triggerPosterUpload) knows whether to leave uploadingForId alone or
+  // reset it.
+  const fileWasSelectedRef = useRef(false)
 
   useEffect(() => {
     loadMovies()
@@ -75,6 +86,50 @@ function AdminMoviesPage() {
     }
   }
 
+  function triggerPosterUpload(movieId) {
+    fileWasSelectedRef.current = false
+    setUploadingForId(movieId)
+    fileInputRef.current.value = ''
+    fileInputRef.current.click()
+
+    // Browsers don't reliably fire a 'change' event when the native file
+    // picker is dismissed via Cancel, so without this, uploadingForId
+    // would stay stuck forever and the button would be frozen on
+    // "Uploading...". Instead, listen for the window regaining focus
+    // (which happens whether the dialog was cancelled OR a file was
+    // picked), then check shortly after whether onChange actually ran.
+    function handleWindowFocus() {
+      window.removeEventListener('focus', handleWindowFocus)
+      // Give onChange a brief moment to fire first, in case a file WAS
+      // selected -- 'change' and 'focus' don't fire in a guaranteed
+      // order across browsers.
+      setTimeout(() => {
+        if (!fileWasSelectedRef.current) {
+          setUploadingForId(null)
+        }
+      }, 300)
+    }
+    window.addEventListener('focus', handleWindowFocus)
+  }
+
+  async function handlePosterFileSelected(event) {
+    const file = event.target.files[0]
+    event.target.value = '' // reset so picking the same file twice still fires onChange
+    if (!file) return
+    fileWasSelectedRef.current = true
+
+    setError('')
+    const movieId = uploadingForId
+    try {
+      await api.uploadMoviePoster(movieId, file)
+      loadMovies()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setUploadingForId(null)
+    }
+  }
+
   return (
     <div style={styles.container}>
       <h1>Manage Movies</h1>
@@ -115,7 +170,7 @@ function AdminMoviesPage() {
           style={styles.input}
         />
         <input
-          placeholder="Poster URL"
+          placeholder="Poster URL (optional -- or upload one after saving, below)"
           value={form.poster_url}
           onChange={(e) => setForm({ ...form, poster_url: e.target.value })}
           style={styles.input}
@@ -139,6 +194,7 @@ function AdminMoviesPage() {
         <table style={styles.table}>
           <thead>
             <tr>
+              <th style={styles.th}></th>
               <th style={styles.th}>Title</th>
               <th style={styles.th}>Genre</th>
               <th style={styles.th}>Duration</th>
@@ -148,11 +204,25 @@ function AdminMoviesPage() {
           <tbody>
             {movies.map((movie) => (
               <tr key={movie.id}>
+                <td style={styles.td}>
+                  <PosterImage
+                    posterUrl={movie.poster_url}
+                    title={movie.title}
+                    style={styles.thumbnail}
+                  />
+                </td>
                 <td style={styles.td}>{movie.title}</td>
                 <td style={styles.td}>{movie.genre}</td>
                 <td style={styles.td}>{movie.duration} min</td>
                 <td style={styles.td}>
                   <button onClick={() => startEdit(movie)} style={styles.linkButton}>Edit</button>
+                  <button
+                    onClick={() => triggerPosterUpload(movie.id)}
+                    disabled={uploadingForId === movie.id}
+                    style={styles.linkButton}
+                  >
+                    {uploadingForId === movie.id ? 'Uploading...' : 'Upload Poster'}
+                  </button>
                   <button onClick={() => handleDelete(movie.id)} style={styles.linkButtonDanger}>Delete</button>
                 </td>
               </tr>
@@ -160,6 +230,17 @@ function AdminMoviesPage() {
           </tbody>
         </table>
       )}
+
+      {/* One shared, hidden file input for every row's "Upload Poster"
+          button -- triggerPosterUpload() records which movie it's for,
+          then simulates a click so the browser's native file picker opens. */}
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        ref={fileInputRef}
+        onChange={handlePosterFileSelected}
+        style={{ display: 'none' }}
+      />
     </div>
   )
 }
@@ -176,6 +257,7 @@ const styles = {
     marginBottom: '1.5rem',
   },
   formHeading: { margin: 0 },
+  thumbnail: { width: '40px', height: '60px', borderRadius: '4px', flexShrink: 0 },
   input: { padding: '0.5rem', fontSize: '0.95rem' },
   textarea: { padding: '0.5rem', fontSize: '0.95rem', minHeight: '60px' },
   error: { color: '#e94560', margin: 0 },

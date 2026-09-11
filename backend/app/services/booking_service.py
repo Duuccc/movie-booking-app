@@ -120,3 +120,40 @@ def cancel_booking(db: Session, booking: Booking) -> Booking:
     db.commit()
     db.refresh(booking)
     return booking
+
+
+def showtime_has_confirmed_bookings(db: Session, showtime_id: int) -> bool:
+    """
+    Used by the movie/theater/showtime DELETE endpoints. Deleting a
+    showtime, movie, or theater cascades at the database level (see the
+    ondelete="CASCADE" foreign keys in models/) -- which would silently
+    delete real customer bookings along with it. Checking this first and
+    returning a 400 instead is a deliberate small guard, not the default
+    cascade behavior left unexamined.
+    """
+    return (
+        db.query(Booking)
+        .filter(Booking.showtime_id == showtime_id, Booking.status == BookingStatus.CONFIRMED)
+        .first()
+        is not None
+    )
+
+
+def movie_has_confirmed_bookings(db: Session, movie_id: int) -> bool:
+    return (
+        db.query(Booking)
+        .join(Showtime, Booking.showtime_id == Showtime.id)
+        .filter(Showtime.movie_id == movie_id, Booking.status == BookingStatus.CONFIRMED)
+        .first()
+        is not None
+    )
+
+
+def theater_has_confirmed_bookings(db: Session, theater_id: int) -> bool:
+    return (
+        db.query(Booking)
+        .join(Showtime, Booking.showtime_id == Showtime.id)
+        .filter(Showtime.theater_id == theater_id, Booking.status == BookingStatus.CONFIRMED)
+        .first()
+        is not None
+    )

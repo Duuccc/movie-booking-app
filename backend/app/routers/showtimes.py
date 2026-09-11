@@ -17,6 +17,7 @@ from app.models.seat import Seat
 from app.models.booking_seat import BookingSeat
 from app.schemas.showtime import ShowtimeCreate, ShowtimeUpdate, ShowtimeOut, SeatAvailability
 from app.auth.dependencies import require_admin
+from app.services.booking_service import showtime_has_confirmed_bookings
 
 router = APIRouter(prefix="/showtimes", tags=["showtimes"])
 
@@ -91,6 +92,11 @@ def delete_showtime(
     _admin=Depends(require_admin),
 ):
     showtime = get_showtime_or_404(showtime_id, db)
+    if showtime_has_confirmed_bookings(db, showtime_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete a showtime with active bookings",
+        )
     db.delete(showtime)
     db.commit()
     return None
