@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { api } from '../services/api'
+import { api, resolveYoutubeEmbedUrl } from '../services/api'
 import PosterImage from '../components/PosterImage'
 
 function MovieDetailsPage() {
@@ -36,6 +36,17 @@ function MovieDetailsPage() {
             {movie.genre} · {movie.duration} min · {movie.release_date}
           </p>
           <p>{movie.description}</p>
+          {movie.trailer_url && resolveYoutubeEmbedUrl(movie.trailer_url) && (
+            <div style={styles.trailerWrapper}>
+              <iframe
+                src={resolveYoutubeEmbedUrl(movie.trailer_url)}
+                title={`${movie.title} trailer`}
+                style={styles.trailer}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          )}
           <Link to={`/movies/${movieId}/showtimes`} style={styles.showtimesButton}>
             View Showtimes
           </Link>
@@ -61,6 +72,8 @@ const styles = {
     textDecoration: 'none',
     borderRadius: '4px',
   },
+  trailerWrapper: { position: 'relative', paddingTop: '56.25%', marginTop: '1rem' },
+  trailer: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0, borderRadius: '8px' },  
 }
 
 export default MovieDetailsPage

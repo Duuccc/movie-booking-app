@@ -11,6 +11,7 @@ class MovieBase(BaseModel):
     genre: Optional[str] = None
     release_date: Optional[date] = None
     poster_url: Optional[str] = None
+    trailer_url: Optional[str] = None
 
 
 class MovieCreate(MovieBase):
@@ -29,7 +30,7 @@ class MovieUpdate(BaseModel):
     genre: Optional[str] = None
     release_date: Optional[date] = None
     poster_url: Optional[str] = None
-
+    trailer_url: Optional[str] = None
 
 class MovieOut(MovieBase):
     id: int

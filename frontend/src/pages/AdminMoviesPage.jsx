@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { api } from '../services/api'
+import { api, isValidYoutubeUrl } from '../services/api'
 import PosterImage from '../components/PosterImage'
 
-const emptyForm = { title: '', description: '', duration: '', genre: '', release_date: '', poster_url: '' }
+const emptyForm = { title: '', description: '', duration: '', genre: '', release_date: '', poster_url: '', trailer_url: '' }
 
 function AdminMoviesPage() {
   const [movies, setMovies] = useState([])
@@ -44,6 +44,7 @@ function AdminMoviesPage() {
       genre: movie.genre || '',
       release_date: movie.release_date || '',
       poster_url: movie.poster_url || '',
+      trailer_url: movie.trailer_url || ''
     })
   }
 
@@ -55,6 +56,12 @@ function AdminMoviesPage() {
   async function handleSubmit(event) {
     event.preventDefault()
     setError('')
+
+    if (!isValidYoutubeUrl(form.trailer_url)) {
+      setError('Trailer URL must be a valid YouTube link (e.g. youtube.com/watch?v=... or youtu.be/...)')
+      return
+    }
+    
     setSubmitting(true)
     const payload = {
       ...form,
@@ -173,6 +180,12 @@ function AdminMoviesPage() {
           placeholder="Poster URL (optional -- or upload one after saving, below)"
           value={form.poster_url}
           onChange={(e) => setForm({ ...form, poster_url: e.target.value })}
+          style={styles.input}
+        />
+        <input
+          placeholder="Trailer URL (YouTube link)"
+          value={form.trailer_url}
+          onChange={(e) => setForm({ ...form, trailer_url: e.target.value })}
           style={styles.input}
         />
         {error && <p style={styles.error}>{error}</p>}

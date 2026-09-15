@@ -76,7 +76,7 @@ function SeatSelectionPage() {
   if (loading) return <p style={styles.status}>Loading seats...</p>
   if (error) return <p style={{ ...styles.status, color: '#e94560' }}>{error}</p>
 
-  const rows = {}
+  const rows = {} // {A: [], B: []}
   for (const seat of seats) {
     const { row } = parseSeat(seat.seat_number)
     if (!rows[row]) rows[row] = []
