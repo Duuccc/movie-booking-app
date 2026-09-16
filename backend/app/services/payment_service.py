@@ -23,6 +23,9 @@ from sqlalchemy.orm import Session
 from app.models.booking import Booking, BookingStatus, PaymentStatus
 from app.models.payment import Payment, PaymentMethod
 
+from app.services.booking_service import cancel_booking
+
+from datetime import datetime, timezone
 
 def _generate_reference(method: PaymentMethod) -> str:
     """Stands in for the transaction id a gateway would return."""
@@ -65,6 +68,14 @@ def pay_for_booking(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This booking has already been paid for",
+        )
+
+    if booking.expires_at <= datetime.now(timezone.utc):
+        cancel_booking(db, booking)
+
+        raise HTTPException(
+            status_code=400,
+            detail="Booking has expired"
         )
 
     succeeded = _charge(booking.total_amount, method, simulate_failure)

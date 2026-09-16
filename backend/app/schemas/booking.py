@@ -34,6 +34,7 @@ class BookingOut(BaseModel):
     total_seats: int
     total_amount: int  # whole VND
     created_at: datetime
+    expires_at: datetime
     seats: List[BookingSeatOut] = []
 
     model_config = ConfigDict(from_attributes=True)

@@ -14,6 +14,7 @@ from app.models.booking import Booking, BookingStatus
 from app.models.booking_seat import BookingSeat
 from app.schemas.booking import BookingOut, BookingSeatOut
 
+from datetime import datetime, timezone, timedelta
 
 def serialize_booking(booking: Booking) -> BookingOut:
     """
@@ -30,6 +31,7 @@ def serialize_booking(booking: Booking) -> BookingOut:
         total_seats=booking.total_seats,
         total_amount=booking.total_amount,
         created_at=booking.created_at,
+        expires_at=booking.expires_at,
         seats=[
             BookingSeatOut(
                 seat_id=bs.seat_id,
@@ -88,6 +90,7 @@ def create_booking(db: Session, user_id: int, showtime_id: int, seat_ids: List[i
         # Snapshot the price now. If an admin edits the showtime price
         # later, this customer still owes what they agreed to.
         total_amount=len(seat_ids) * showtime.price,
+        expires_at= datetime.now(timezone.utc) + timedelta(minutes=5)
     )
     db.add(booking)
     db.flush()  # assigns booking.id without committing yet

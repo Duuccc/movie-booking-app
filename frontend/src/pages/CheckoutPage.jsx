@@ -20,6 +20,7 @@ function CheckoutPage() {
   const [error, setError] = useState('')
   const [payError, setPayError] = useState('')
   const [paying, setPaying] = useState(false)
+  const [secondsLeft, setSecondsLeft] = useState(null)
 
   useEffect(() => {
     api
@@ -45,6 +46,42 @@ function CheckoutPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }, [bookingId, navigate])
+
+  useEffect(() => {
+    if (!booking?.expires_at) return
+
+    function updateCountdown() {
+        const expiresAt = new Date(booking.expires_at).getTime()
+        const now = Date.now()
+
+        const remaining = Math.max(0, Math.ceil((expiresAt - now) / 1000))
+
+        setSecondsLeft(remaining)
+    }
+
+    updateCountdown()
+
+    const timer = setInterval(updateCountdown, 1000)
+
+    return () => clearInterval(timer)
+    }, [booking])
+
+    useEffect(() => {
+        if (secondsLeft !== 0) return
+
+        async function expireBooking() {
+            try {
+            await api.cancelBooking(Number(bookingId))
+            navigate('/bookings')
+            } catch (err) {
+            setPayError(err.message)
+            }
+        }
+
+        expireBooking()
+        }, [secondsLeft, bookingId, navigate])
+    const minutes = Math.floor(secondsLeft/60)
+    const seconds = secondsLeft % 60
 
   async function handlePay() {
     setPayError('')
@@ -73,7 +110,13 @@ function CheckoutPage() {
     <div className="page-narrow">
       <h1 className="page-title">Checkout</h1>
       <p className="page-subtitle">Your seats are held. Complete payment to confirm.</p>
-
+        {secondsLeft !== null && (
+            <div className="checkout-timer">
+                Time remaining:{' '}
+                {Math.floor(secondsLeft / 60)}:
+                {String(secondsLeft % 60).padStart(2, '0')}
+            </div>
+            )}
       <div className="card" style={{ padding: '1.5rem' }}>
         <dl className="confirmation-details" style={{ marginTop: 0 }}>
           <dt>Movie</dt>

@@ -20,6 +20,8 @@ from app.auth.dependencies import get_current_user
 from app.services.booking_service import create_booking, cancel_booking, serialize_booking
 from app.services.payment_service import pay_for_booking
 
+from datetime import datetime, timezone
+
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 
