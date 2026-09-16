@@ -10,6 +10,7 @@ import MovieDetailsPage from './pages/MovieDetailsPage'
 import ShowtimeSelectionPage from './pages/ShowtimeSelectionPage'
 import SeatSelectionPage from './pages/SeatSelectionPage'
 import BookingConfirmationPage from './pages/BookingConfirmationPage'
+import CheckoutPage from './pages/CheckoutPage'
 import MyBookingsPage from './pages/MyBookingsPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminMoviesPage from './pages/AdminMoviesPage'
@@ -34,6 +35,13 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route 
+            path='/bookings/:bookingId/checkout'
+            element={
+              <ProtectedRoute>
+                <CheckoutPage></CheckoutPage>
+              </ProtectedRoute>
+            }></Route>
           <Route
             path="/bookings/:bookingId/confirmation"
             element={

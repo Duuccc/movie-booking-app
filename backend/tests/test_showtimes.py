@@ -57,7 +57,7 @@ def test_admin_can_create_showtime(client, db_session):
             "movie_id": movie.id,
             "theater_id": theater.id,
             "start_time": (datetime.now() + timedelta(days=1)).isoformat(),
-            "price": "10.00",
+            "price": 75000,
         },
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -166,3 +166,53 @@ def test_booked_seat_shows_booked_only_for_its_own_showtime(client, db_session):
 def test_showtime_seats_not_found_for_unknown_showtime(client):
     response = client.get("/showtimes/9999/seats")
     assert response.status_code == 404
+
+
+def test_admin_cannot_delete_showtime_with_active_bookings(client, db_session):
+    """
+    Milestone 10 fix: deleting a showtime would otherwise cascade-delete
+    any bookings against it via the FK. Confirmed bookings must block
+    the delete with 400 instead.
+    """
+    token = _register_and_login(client, "admin3@example.com")
+    _make_admin(db_session, "admin3@example.com")
+    movie, theater = _seed_movie_and_theater(db_session)
+
+    seat = Seat(theater_id=theater.id, row="A", seat_number=1)
+    db_session.add(seat)
+    db_session.commit()
+    db_session.refresh(seat)
+
+    showtime = Showtime(movie_id=movie.id, theater_id=theater.id, start_time=datetime.now(), price=10)
+    db_session.add(showtime)
+    db_session.commit()
+    db_session.refresh(showtime)
+
+    admin_user = db_session.query(User).filter(User.email == "admin3@example.com").first()
+    booking = Booking(
+        user_id=admin_user.id, showtime_id=showtime.id, status=BookingStatus.CONFIRMED, total_seats=1
+    )
+    db_session.add(booking)
+    db_session.commit()
+    db_session.refresh(booking)
+    db_session.add(BookingSeat(booking_id=booking.id, seat_id=seat.id, showtime_id=showtime.id))
+    db_session.commit()
+
+    response = client.delete(f"/showtimes/{showtime.id}", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 400
+    assert client.get(f"/showtimes/{showtime.id}").status_code == 200
+
+
+def test_admin_can_delete_showtime_with_no_bookings(client, db_session):
+    token = _register_and_login(client, "admin4@example.com")
+    _make_admin(db_session, "admin4@example.com")
+    movie, theater = _seed_movie_and_theater(db_session)
+
+    showtime = Showtime(movie_id=movie.id, theater_id=theater.id, start_time=datetime.now(), price=10)
+    db_session.add(showtime)
+    db_session.commit()
+    db_session.refresh(showtime)
+
+    response = client.delete(f"/showtimes/{showtime.id}", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 204
+    assert client.get(f"/showtimes/{showtime.id}").status_code == 404

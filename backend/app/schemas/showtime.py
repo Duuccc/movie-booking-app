@@ -1,5 +1,4 @@
 from datetime import datetime
-from decimal import Decimal
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -9,7 +8,7 @@ class ShowtimeBase(BaseModel):
     movie_id: int
     theater_id: int
     start_time: datetime
-    price: Decimal = Decimal("10.00")
+    price: int = 75000  # whole VND -- see models/showtime.py for why this isn't Decimal
 
 
 class ShowtimeCreate(ShowtimeBase):
@@ -20,7 +19,7 @@ class ShowtimeUpdate(BaseModel):
     movie_id: Optional[int] = None
     theater_id: Optional[int] = None
     start_time: Optional[datetime] = None
-    price: Optional[Decimal] = None
+    price: Optional[int] = None
 
 
 class ShowtimeOut(ShowtimeBase):

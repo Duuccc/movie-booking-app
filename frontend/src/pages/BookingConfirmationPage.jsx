@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { api } from '../services/api'
+import { api, formatVnd } from '../services/api'
 
 function BookingConfirmationPage() {
   const { bookingId } = useParams()
@@ -38,14 +38,19 @@ function BookingConfirmationPage() {
   if (!booking) return null
 
   const seatNumbers = booking.seats.map((s) => s.seat_number).sort().join(', ')
-  const total = showtime ? (booking.total_seats * Number(showtime.price)).toFixed(2) : null
+  const total = showtime ? formatVnd(booking.total_seats * showtime.price) : null
 
   return (
     <div className="page-narrow">
       <div className="card confirmation-card">
         <div className="confirmation-check">&#10003;</div>
         <h1 style={{ marginBottom: '0.2rem' }}>Booking Confirmed</h1>
-        <span className="badge badge-success">{booking.status}</span>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <span className="badge badge-success">{booking.status}</span>
+          <span className={`badge ${booking.payment_status === 'PAID' ? 'badge-success' : 'badge-muted'}`}>
+            {booking.payment_status}
+          </span>
+        </div>
 
         <dl className="confirmation-details">
           <dt>Movie</dt>
@@ -57,7 +62,7 @@ function BookingConfirmationPage() {
           <dt>Seats</dt>
           <dd>{seatNumbers}</dd>
           <dt>Total</dt>
-          <dd>{total ? `$${total}` : '—'}</dd>
+          <dd>{total || '—'}</dd>
           <dt>Booking ID</dt>
           <dd>#{booking.id}</dd>
         </dl>

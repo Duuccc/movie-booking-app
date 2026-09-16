@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { api } from '../services/api'
+import { api, formatVnd } from '../services/api'
 
-const emptyForm = { movie_id: '', theater_id: '', start_time: '', price: '10.00' }
+const emptyForm = { movie_id: '', theater_id: '', start_time: '', price: '75000' }
 
 function AdminShowtimesPage() {
   const [showtimes, setShowtimes] = useState([])
@@ -52,7 +52,7 @@ function AdminShowtimesPage() {
       movie_id: Number(form.movie_id),
       theater_id: Number(form.theater_id),
       start_time: new Date(form.start_time).toISOString(),
-      price: form.price,
+      price: Number(form.price),
     }
     try {
       if (editingId) {
@@ -127,10 +127,11 @@ function AdminShowtimesPage() {
           />
         </div>
         <div className="field">
-          <label>Price</label>
+          <label>Price (VND)</label>
           <input
             type="number"
-            step="0.01"
+            step="1000"
+            min="0"
             className="input"
             value={form.price}
             onChange={(e) => setForm({ ...form, price: e.target.value })}
@@ -170,7 +171,7 @@ function AdminShowtimesPage() {
                   <td>{movieTitleById[showtime.movie_id]}</td>
                   <td>{theaterNameById[showtime.theater_id]}</td>
                   <td>{new Date(showtime.start_time).toLocaleString()}</td>
-                  <td>${showtime.price}</td>
+                  <td>{formatVnd(showtime.price)}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>
                     <button onClick={() => startEdit(showtime)} className="link-btn" style={{ marginRight: '0.75rem' }}>Edit</button>
                     <button onClick={() => handleDelete(showtime.id)} className="link-btn danger">Delete</button>

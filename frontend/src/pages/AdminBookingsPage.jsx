@@ -40,6 +40,7 @@ function AdminBookingsPage() {
                 <th>Showtime</th>
                 <th>Seats</th>
                 <th>Status</th>
+                <th>Payment</th>
               </tr>
             </thead>
             <tbody>
@@ -58,6 +59,11 @@ function AdminBookingsPage() {
                     <td>
                       <span className={`badge ${booking.status === 'CONFIRMED' ? 'badge-success' : 'badge-muted'}`}>
                         {booking.status}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge ${booking.payment_status === 'PAID' ? 'badge-success' : 'badge-muted'}`}>
+                        {booking.payment_status}
                       </span>
                     </td>
                   </tr>

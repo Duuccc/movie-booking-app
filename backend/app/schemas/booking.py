@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from app.models.booking import BookingStatus
+from app.models.booking import BookingStatus, PaymentStatus
 
 
 class BookingCreate(BaseModel):
@@ -30,7 +30,9 @@ class BookingOut(BaseModel):
     user_id: int
     showtime_id: int
     status: BookingStatus
+    payment_status: PaymentStatus
     total_seats: int
+    total_amount: int  # whole VND
     created_at: datetime
     seats: List[BookingSeatOut] = []
 

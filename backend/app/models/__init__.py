@@ -9,8 +9,9 @@ from app.models.movie import Movie
 from app.models.theater import Theater
 from app.models.seat import Seat
 from app.models.showtime import Showtime
-from app.models.booking import Booking, BookingStatus
+from app.models.booking import Booking, BookingStatus, PaymentStatus
 from app.models.booking_seat import BookingSeat
+from app.models.payment import Payment, PaymentMethod
 
 __all__ = [
     "User",
@@ -21,5 +22,8 @@ __all__ = [
     "Showtime",
     "Booking",
     "BookingStatus",
+    "PaymentStatus",
     "BookingSeat",
+    "Payment",
+    "PaymentMethod",
 ]

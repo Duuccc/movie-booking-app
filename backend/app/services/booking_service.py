@@ -26,7 +26,9 @@ def serialize_booking(booking: Booking) -> BookingOut:
         user_id=booking.user_id,
         showtime_id=booking.showtime_id,
         status=booking.status,
+        payment_status=booking.payment_status,
         total_seats=booking.total_seats,
+        total_amount=booking.total_amount,
         created_at=booking.created_at,
         seats=[
             BookingSeatOut(
@@ -83,6 +85,9 @@ def create_booking(db: Session, user_id: int, showtime_id: int, seat_ids: List[i
         showtime_id=showtime_id,
         status=BookingStatus.CONFIRMED,
         total_seats=len(seat_ids),
+        # Snapshot the price now. If an admin edits the showtime price
+        # later, this customer still owes what they agreed to.
+        total_amount=len(seat_ids) * showtime.price,
     )
     db.add(booking)
     db.flush()  # assigns booking.id without committing yet

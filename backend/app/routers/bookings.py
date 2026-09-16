@@ -15,8 +15,10 @@ from app.database import get_db
 from app.models.user import User
 from app.models.booking import Booking
 from app.schemas.booking import BookingCreate, BookingOut
+from app.schemas.payment import PaymentCreate, PaymentOut
 from app.auth.dependencies import get_current_user
 from app.services.booking_service import create_booking, cancel_booking, serialize_booking
+from app.services.payment_service import pay_for_booking
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -74,3 +76,20 @@ def cancel_my_booking(
     booking = get_owned_booking_or_404(booking_id, current_user, db)
     booking = cancel_booking(db, booking)
     return serialize_booking(booking)
+
+
+@router.post("/{booking_id}/pay", response_model=PaymentOut)
+def pay_my_booking(
+    booking_id: int,
+    payload: PaymentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Mock payment -- see services/payment_service.py. Ownership is checked
+    the same way as viewing/cancelling: you can only pay for your own
+    booking, and someone else's booking id returns 404, not 403.
+    """
+    booking = get_owned_booking_or_404(booking_id, current_user, db)
+    payment = pay_for_booking(db, booking, payload.method, payload.simulate_failure)
+    return payment

@@ -110,7 +110,7 @@ def seed():
                     movie_id=movie.id,
                     theater_id=theater.id,
                     start_time=base_time.replace(hour=hour),
-                    price=10.00,
+                    price=75000,
                 ))
 
         db.commit()

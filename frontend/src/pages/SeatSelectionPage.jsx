@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { api } from '../services/api'
+import { api, formatVnd } from '../services/api'
 
 function parseSeat(seatNumber) {
   const match = seatNumber.match(/^([A-Za-z]+)(\d+)$/)
@@ -55,7 +55,7 @@ function SeatSelectionPage() {
     setSubmitting(true)
     try {
       const booking = await api.createBooking(Number(showtimeId), selectedSeatIds)
-      navigate(`/bookings/${booking.id}/confirmation`)
+      navigate(`/bookings/${booking.id}/checkout`)
     } catch (err) {
       setBookingError(err.message)
       const freshSeats = await api.getShowtimeSeats(showtimeId)
@@ -73,7 +73,7 @@ function SeatSelectionPage() {
   if (loading) return <p className="status-message">Loading seats...</p>
   if (error) return <p className="status-message error">{error}</p>
 
-  const rows = {} // {A: [], B: []}
+  const rows = {}
   for (const seat of seats) {
     const { row } = parseSeat(seat.seat_number)
     if (!rows[row]) rows[row] = []
@@ -138,7 +138,7 @@ function SeatSelectionPage() {
         <p>Number of tickets: {selectedSeatIds.length}</p>
         {showtime && (
           <p className="booking-price">
-            ${(selectedSeatIds.length * Number(showtime.price)).toFixed(2)}
+            {formatVnd(selectedSeatIds.length * showtime.price)}
           </p>
         )}
         {bookingError && <p className="error-text">{bookingError}</p>}

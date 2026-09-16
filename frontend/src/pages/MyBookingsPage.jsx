@@ -74,6 +74,14 @@ function MyBookingsPage() {
               <span className={`badge ${booking.status === 'CONFIRMED' ? 'badge-success' : 'badge-muted'}`}>
                 {booking.status}
               </span>
+              <span className={`badge ${booking.payment_status === 'PAID' ? 'badge-success' : 'badge-muted'}`}>
+                {booking.payment_status}
+              </span>
+              {booking.status === 'CONFIRMED' && booking.payment_status !== 'PAID' && (
+                <Link to={`/bookings/${booking.id}/checkout`} className="btn btn-primary btn-sm">
+                  Pay now
+                </Link>
+              )}
               {booking.status === 'CONFIRMED' && (
                 <button
                   onClick={() => handleCancel(booking.id)}

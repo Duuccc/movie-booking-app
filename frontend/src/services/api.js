@@ -26,6 +26,10 @@ export function isValidYoutubeUrl(trailerUrl) {
   return resolveYoutubeEmbedUrl(trailerUrl) !== null
 }
 
+export function formatVnd(amount) {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
+}
+
 function getToken() {
   return localStorage.getItem('token')
 }
@@ -99,6 +103,12 @@ export const api = {
   getBooking: (id) => request(`/bookings/${id}`, { auth: true }),
   listMyBookings: () => request('/bookings', { auth: true }),
   cancelBooking: (id) => request(`/bookings/${id}/cancel`, { method: 'POST', auth: true }),
+  payBooking: (id, method, simulateFailure = false) =>
+    request(`/bookings/${id}/pay`, {
+      method: 'POST',
+      auth: true,
+      body: { method, simulate_failure: simulateFailure },
+    }),
   listAdminBookings: () => request('/admin/bookings', { auth: true }),
 
   createMovie: (payload) => request('/movies', { method: 'POST', auth: true, body: payload }),
