@@ -14,6 +14,7 @@ class Movie(Base):
     genre = Column(String, nullable=True)
     release_date = Column(Date, nullable=True)
     poster_url = Column(String, nullable=True)
+    trailer_url = Column(String, nullable=True)
 
     showtimes = relationship(
         "Showtime", back_populates="movie", cascade="all, delete-orphan"

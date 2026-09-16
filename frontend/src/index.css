@@ -432,3 +432,50 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   font-size: 1.05rem;
 }
 .admin-card:hover { border-color: var(--accent); }
+
+/* ============================================================
+   Day filter pills
+   ============================================================ */
+.day-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 1.25rem 0 0.5rem;
+}
+.day-pill {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.day-pill:hover { border-color: var(--ink); }
+.day-pill-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+/* ============================================================
+   Trailer embed (16:9 responsive)
+   ============================================================ */
+.trailer-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--ink);
+  box-shadow: var(--shadow);
+}
+.trailer-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}

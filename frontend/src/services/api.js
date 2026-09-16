@@ -12,6 +12,20 @@ export function resolvePosterUrl(posterUrl) {
   return `${API_BASE_URL}${posterUrl}`
 }
 
+export function resolveYoutubeEmbedUrl(trailerUrl) {
+  if (!trailerUrl) return null
+  const watchMatch = trailerUrl.match(/[?&]v=([^&]+)/)
+  const shortMatch = trailerUrl.match(/youtu\.be\/([^?&]+)/)
+  const videoId = watchMatch?.[1] || shortMatch?.[1]
+  if (!videoId) return null
+  return `https://www.youtube.com/embed/${videoId}`
+}
+
+export function isValidYoutubeUrl(trailerUrl) {
+  if (!trailerUrl) return true // empty is fine -- trailer_url is optional
+  return resolveYoutubeEmbedUrl(trailerUrl) !== null
+}
+
 function getToken() {
   return localStorage.getItem('token')
 }

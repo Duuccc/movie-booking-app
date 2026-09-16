@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { api } from '../services/api'
+import { api, resolveYoutubeEmbedUrl } from '../services/api'
 import PosterImage from '../components/PosterImage'
 
 function MovieDetailsPage() {
@@ -20,6 +20,8 @@ function MovieDetailsPage() {
   if (loading) return <p className="status-message">Loading...</p>
   if (error) return <p className="status-message error">{error}</p>
   if (!movie) return null
+
+  const embedUrl = movie.trailer_url ? resolveYoutubeEmbedUrl(movie.trailer_url) : null
 
   return (
     <div className="page-medium">
@@ -41,6 +43,20 @@ function MovieDetailsPage() {
           </Link>
         </div>
       </div>
+
+      {embedUrl && (
+        <div style={{ marginTop: '2.5rem' }}>
+          <h3>Trailer</h3>
+          <div className="trailer-frame">
+            <iframe
+              src={embedUrl}
+              title={`${movie.title} trailer`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
