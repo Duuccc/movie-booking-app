@@ -17,9 +17,6 @@ function MyBookingsPage() {
 
   function loadData() {
     setLoading(true)
-    // Bookings only carry a showtime_id -- fetch showtimes/movies/theaters
-    // once and join client-side, same approach as the confirmation page,
-    // so each row can show "Movie · Theater · Time" instead of just IDs.
     Promise.all([api.listMyBookings(), api.listShowtimes(), api.listMovies(), api.listTheaters()])
       .then(([bookingsData, showtimesData, moviesData, theatersData]) => {
         setBookings(bookingsData)
@@ -43,50 +40,45 @@ function MyBookingsPage() {
     }
   }
 
-  if (loading) return <p style={styles.status}>Loading your bookings...</p>
-  if (error) return <p style={{ ...styles.status, color: '#e94560' }}>{error}</p>
+  if (loading) return <p className="status-message">Loading your bookings...</p>
+  if (error) return <p className="status-message error">{error}</p>
   if (bookings.length === 0) {
     return (
-      <p style={styles.status}>
+      <p className="status-message">
         You haven't booked anything yet. <Link to="/">Browse movies</Link>
       </p>
     )
   }
 
   return (
-    <div style={styles.container}>
-      <h1>My Bookings</h1>
+    <div className="page-medium">
+      <h1 className="page-title">My Bookings</h1>
       {bookings.map((booking) => {
         const showtime = showtimesById[booking.showtime_id]
         const movie = showtime ? moviesById[showtime.movie_id] : null
         const theater = showtime ? theatersById[showtime.theater_id] : null
 
         return (
-          <div key={booking.id} style={styles.card}>
+          <div key={booking.id} className="card booking-card">
             <div>
-              <p style={styles.movieTitle}>{movie?.title || `Showtime #${booking.showtime_id}`}</p>
-              <p style={styles.subline}>
+              <p className="booking-card-title">{movie?.title || `Showtime #${booking.showtime_id}`}</p>
+              <p className="booking-card-sub">
                 {theater?.name} · {showtime && new Date(showtime.start_time).toLocaleString()}
               </p>
-              <p style={styles.seatLine}>
+              <p className="booking-card-seats">
                 Seats: {booking.seats.map((s) => s.seat_number).sort().join(', ')}
               </p>
-              <p style={styles.dateLine}>Booked {new Date(booking.created_at).toLocaleString()}</p>
+              <p className="booking-card-date">Booked {new Date(booking.created_at).toLocaleString()}</p>
             </div>
-            <div style={styles.rightCol}>
-              <span
-                style={{
-                  ...styles.badge,
-                  ...(booking.status === 'CONFIRMED' ? styles.badgeConfirmed : styles.badgeCancelled),
-                }}
-              >
+            <div className="booking-card-actions">
+              <span className={`badge ${booking.status === 'CONFIRMED' ? 'badge-success' : 'badge-muted'}`}>
                 {booking.status}
               </span>
               {booking.status === 'CONFIRMED' && (
                 <button
                   onClick={() => handleCancel(booking.id)}
                   disabled={cancellingId === booking.id}
-                  style={styles.cancelButton}
+                  className="btn btn-danger btn-sm"
                 >
                   {cancellingId === booking.id ? 'Cancelling...' : 'Cancel'}
                 </button>
@@ -97,38 +89,6 @@ function MyBookingsPage() {
       })}
     </div>
   )
-}
-
-const styles = {
-  status: { textAlign: 'center', marginTop: '3rem' },
-  container: { maxWidth: '600px', margin: '0 auto', padding: '1.5rem' },
-  card: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    background: '#fff',
-    borderRadius: '8px',
-    padding: '1rem',
-    marginBottom: '0.75rem',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-  },
-  movieTitle: { margin: '0 0 0.15rem', fontWeight: 'bold' },
-  subline: { margin: '0 0 0.4rem', color: '#666', fontSize: '0.85rem' },
-  seatLine: { margin: '0 0 0.25rem', color: '#333' },
-  dateLine: { margin: 0, color: '#999', fontSize: '0.75rem' },
-  rightCol: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' },
-  badge: { padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 'bold' },
-  badgeConfirmed: { background: '#e8f5e9', color: '#2e7d32' },
-  badgeCancelled: { background: '#eee', color: '#888' },
-  cancelButton: {
-    padding: '0.35rem 0.75rem',
-    fontSize: '0.85rem',
-    cursor: 'pointer',
-    background: '#e94560',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-  },
 }
 
 export default MyBookingsPage

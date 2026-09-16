@@ -25,48 +25,41 @@ function LoginPage() {
   }
 
   return (
-    <div style={styles.container}>
-      <h1>Log In</h1>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <label style={styles.label}>
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={styles.input}
-          />
-        </label>
-        <label style={styles.label}>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={styles.input}
-          />
-        </label>
-        {error && <p style={styles.error}>{error}</p>}
-        <button type="submit" disabled={submitting} style={styles.submit}>
-          {submitting ? 'Logging in...' : 'Log In'}
-        </button>
-      </form>
-      <p>
+    <div className="page-narrow">
+      <h1 className="page-title">Log In</h1>
+      <div className="form-card">
+        <form onSubmit={handleSubmit}>
+          <div className="field">
+            <label>Email</label>
+            <input
+              type="email"
+              className="input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="field">
+            <label>Password</label>
+            <input
+              type="password"
+              className="input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          {error && <p className="error-text">{error}</p>}
+          <button type="submit" disabled={submitting} className="btn btn-primary btn-block">
+            {submitting ? 'Logging in...' : 'Log In'}
+          </button>
+        </form>
+      </div>
+      <p className="form-footer">
         No account? <Link to="/register">Register</Link>
       </p>
     </div>
   )
-}
-
-const styles = {
-  container: { maxWidth: '360px', margin: '3rem auto', padding: '0 1rem' },
-  form: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
-  label: { display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.9rem' },
-  input: { padding: '0.5rem', fontSize: '1rem' },
-  error: { color: '#e94560' },
-  submit: { padding: '0.6rem', fontSize: '1rem', cursor: 'pointer' },
 }
 
 export default LoginPage

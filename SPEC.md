@@ -150,46 +150,4 @@ All error responses are `{"detail": "<message>"}`.
 `AdminRoute` redirects non-admins to `/` (they're authenticated, just
 not authorized -- different from the unauthenticated case).
 
-## 8. Non-Goals
 
-Explicitly out of scope, per the original project brief:
-
-- Real payment processing
-- Email/SMS notifications
-- Social login
-- Recommendation systems
-- Microservices, Redis, Kafka, WebSockets
-- Per-seat/tiered pricing, coupons, reviews/ratings
-- Multi-currency, multi-language
-- Advanced search/filtering
-- A user-management API (no `GET /users`, no admin promotion endpoint)
-- Automated frontend tests
-- Cloud object storage for posters (local disk stands in for it -- see below)
-
-## 9. Known Deviations from a "Real" Production System
-
-These are conscious simplifications, not oversights:
-
-- **No migrations.** Schema comes from `Base.metadata.create_all()`.
-  No migration history; evolving an existing table's shape requires
-  dropping it.
-- **Posters live on local disk**, not object storage + CDN. Same
-  architecture (DB stores a URL, not bytes), smaller storage backend.
-  Files don't survive redeployment to most hosting platforms.
-- **Poster upload trusts the declared `Content-Type` header**, not the
-  actual file bytes. A mislabeled non-image file would be accepted.
-- **JWTs cannot be revoked before expiry** (no denylist).
-- **Admin's all-bookings view shows a raw `user_id`**, not a name or
-  email, since there's no users-list endpoint.
-- **Tests run against in-memory SQLite**, not Postgres, for speed and
-  zero-dependency CI. A few Postgres-specific behaviors (exact numeric
-  rounding, certain constraint edge cases) aren't exercised by the
-  suite as a result.
-
-## 10. Source of Truth for Deeper Detail
-
-- Database column-level detail: `backend/app/models/`
-- Request/response shapes: `backend/app/schemas/`
-- The booking transaction itself: `backend/app/services/booking_service.py`
-- Full endpoint behavior: run the app and read `http://localhost:8000/docs`
-- Setup/run/test instructions: `README.md`

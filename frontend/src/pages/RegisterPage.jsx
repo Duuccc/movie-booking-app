@@ -28,57 +28,50 @@ function RegisterPage() {
   }
 
   return (
-    <div style={styles.container}>
-      <h1>Register</h1>
-      {success ? (
-        <p>Account created. Redirecting to login...</p>
-      ) : (
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <label style={styles.label}>
-            Name
-            <input value={name} onChange={(e) => setName(e.target.value)} required style={styles.input} />
-          </label>
-          <label style={styles.label}>
-            Email
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={styles.input}
-            />
-          </label>
-          <label style={styles.label}>
-            Password
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              style={styles.input}
-            />
-          </label>
-          {error && <p style={styles.error}>{error}</p>}
-          <button type="submit" disabled={submitting} style={styles.submit}>
-            {submitting ? 'Creating account...' : 'Register'}
-          </button>
-        </form>
-      )}
-      <p>
+    <div className="page-narrow">
+      <h1 className="page-title">Register</h1>
+      <div className="form-card">
+        {success ? (
+          <p>Account created. Redirecting to login...</p>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="field">
+              <label>Name</label>
+              <input className="input" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div className="field">
+              <label>Email</label>
+              <input
+                type="email"
+                className="input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Password</label>
+              <input
+                type="password"
+                className="input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+              />
+            </div>
+            {error && <p className="error-text">{error}</p>}
+            <button type="submit" disabled={submitting} className="btn btn-primary btn-block">
+              {submitting ? 'Creating account...' : 'Register'}
+            </button>
+          </form>
+        )}
+      </div>
+      <p className="form-footer">
         Already have an account? <Link to="/login">Log in</Link>
       </p>
     </div>
   )
-}
-
-const styles = {
-  container: { maxWidth: '360px', margin: '3rem auto', padding: '0 1rem' },
-  form: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
-  label: { display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.9rem' },
-  input: { padding: '0.5rem', fontSize: '1rem' },
-  error: { color: '#e94560' },
-  submit: { padding: '0.6rem', fontSize: '1rem', cursor: 'pointer' },
 }
 
 export default RegisterPage

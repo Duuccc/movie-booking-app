@@ -58,9 +58,6 @@ function SeatSelectionPage() {
       navigate(`/bookings/${booking.id}/confirmation`)
     } catch (err) {
       setBookingError(err.message)
-      // A 409 means someone else grabbed a seat between page load and
-      // submit -- refresh seat availability so the grid reflects reality,
-      // and drop any selected seat that's no longer available.
       const freshSeats = await api.getShowtimeSeats(showtimeId)
       setSeats(freshSeats)
       setSelectedSeatIds((current) =>
@@ -73,8 +70,8 @@ function SeatSelectionPage() {
     }
   }
 
-  if (loading) return <p style={styles.status}>Loading seats...</p>
-  if (error) return <p style={{ ...styles.status, color: '#e94560' }}>{error}</p>
+  if (loading) return <p className="status-message">Loading seats...</p>
+  if (error) return <p className="status-message error">{error}</p>
 
   const rows = {}
   for (const seat of seats) {
@@ -90,18 +87,22 @@ function SeatSelectionPage() {
     .sort()
 
   return (
-    <div style={styles.container}>
-      <Link to={`/movies/${showtime?.movie_id}/showtimes`}>&larr; Back to showtimes</Link>
-      <h1 style={styles.movieTitle}>{movie?.title}</h1>
-      <p style={styles.meta}>
+    <div className="page-medium">
+      <Link to={`/movies/${showtime?.movie_id}/showtimes`} className="back-link">&larr; Back to showtimes</Link>
+      <h1 style={{ marginBottom: '0.15rem' }}>{movie?.title}</h1>
+      <p style={{ color: 'var(--muted)' }}>
         {theater?.name} · {showtime && new Date(showtime.start_time).toLocaleString()}
       </p>
 
-      <div style={styles.screen}>SCREEN</div>
+      <div className="screen-bar">
+        <div className="screen-curve" />
+        <span className="screen-label">SCREEN</span>
+      </div>
 
-      <div style={styles.grid}>
+      <div className="seat-grid">
         {rowLetters.map((row) => (
-          <div key={row} style={styles.row}>
+          <div key={row} className="seat-row">
+            <span className="seat-row-label">{row}</span>
             {rows[row]
               .slice()
               .sort((a, b) => parseSeat(a.seat_number).number - parseSeat(b.seat_number).number)
@@ -114,14 +115,9 @@ function SeatSelectionPage() {
                     onClick={() => toggleSeat(seat)}
                     disabled={isBooked}
                     title={seat.seat_number}
-                    style={{
-                      ...styles.seat,
-                      ...(isBooked
-                        ? styles.seatBooked
-                        : isSelected
-                        ? styles.seatSelected
-                        : styles.seatAvailable),
-                    }}
+                    className={
+                      'seat' + (isBooked ? ' seat-booked' : isSelected ? ' seat-selected' : '')
+                    }
                   >
                     {seat.seat_number}
                   </button>
@@ -131,85 +127,31 @@ function SeatSelectionPage() {
         ))}
       </div>
 
-      <div style={styles.legend}>
-        <span><span style={{ ...styles.swatch, ...styles.seatAvailable }} /> Available</span>
-        <span><span style={{ ...styles.swatch, ...styles.seatSelected }} /> Selected</span>
-        <span><span style={{ ...styles.swatch, ...styles.seatBooked }} /> Booked</span>
+      <div className="seat-legend">
+        <span><span className="seat-legend-swatch" style={{ background: 'var(--paper)' }} /> Available</span>
+        <span><span className="seat-legend-swatch" style={{ background: 'var(--accent)', borderColor: 'var(--accent-dark)' }} /> Selected</span>
+        <span><span className="seat-legend-swatch" style={{ background: 'var(--border)' }} /> Booked</span>
       </div>
 
-      <div style={styles.summary}>
+      <div className="booking-summary">
         <p>Selected seats: {selectedSeatNumbers.length ? selectedSeatNumbers.join(', ') : 'None'}</p>
         <p>Number of tickets: {selectedSeatIds.length}</p>
         {showtime && (
-          <p>Price: ${(selectedSeatIds.length * Number(showtime.price)).toFixed(2)}</p>
+          <p className="booking-price">
+            ${(selectedSeatIds.length * Number(showtime.price)).toFixed(2)}
+          </p>
         )}
-        {bookingError && <p style={styles.error}>{bookingError}</p>}
+        {bookingError && <p className="error-text">{bookingError}</p>}
         <button
           onClick={handleConfirm}
           disabled={selectedSeatIds.length === 0 || submitting}
-          style={styles.confirmButton}
+          className="btn btn-primary"
         >
           {submitting ? 'Booking...' : 'Confirm Booking'}
         </button>
       </div>
     </div>
   )
-}
-
-const styles = {
-  status: { textAlign: 'center', marginTop: '3rem' },
-  container: { maxWidth: '600px', margin: '0 auto', padding: '1.5rem' },
-  movieTitle: { marginBottom: '0.25rem' },
-  meta: { color: '#666' },
-  screen: {
-    textAlign: 'center',
-    background: '#ccc',
-    padding: '0.5rem',
-    margin: '1.5rem 0',
-    borderRadius: '4px',
-    letterSpacing: '0.2em',
-    fontSize: '0.8rem',
-  },
-  grid: { display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' },
-  row: { display: 'flex', gap: '0.5rem' },
-  seat: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '4px',
-    border: '1px solid #999',
-    fontSize: '0.7rem',
-    cursor: 'pointer',
-  },
-  seatAvailable: { background: '#fff', color: '#333' },
-  seatSelected: { background: '#1a1a2e', color: '#fff', border: '1px solid #1a1a2e' },
-  seatBooked: { background: '#ccc', color: '#888', cursor: 'not-allowed' },
-  legend: {
-    display: 'flex',
-    gap: '1.5rem',
-    justifyContent: 'center',
-    margin: '1.5rem 0',
-    fontSize: '0.85rem',
-  },
-  swatch: {
-    display: 'inline-block',
-    width: '12px',
-    height: '12px',
-    borderRadius: '2px',
-    marginRight: '0.35rem',
-    verticalAlign: 'middle',
-    border: '1px solid #999',
-  },
-  summary: { textAlign: 'center', marginTop: '1rem' },
-  error: { color: '#e94560' },
-  confirmButton: {
-    padding: '0.6rem 1.5rem',
-    fontSize: '1rem',
-    cursor: 'pointer',
-    background: '#1a1a2e',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-  },
 }
 
 export default SeatSelectionPage

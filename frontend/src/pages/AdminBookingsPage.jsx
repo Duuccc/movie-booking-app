@@ -21,63 +21,54 @@ function AdminBookingsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <p style={styles.status}>Loading bookings...</p>
-  if (error) return <p style={{ ...styles.status, color: '#e94560' }}>{error}</p>
+  if (loading) return <p className="status-message">Loading bookings...</p>
+  if (error) return <p className="status-message error">{error}</p>
 
   return (
-    <div style={styles.container}>
-      <h1>All Bookings</h1>
-      {bookings.length === 0 && <p>No bookings yet.</p>}
+    <div className="page">
+      <h1 className="page-title">All Bookings</h1>
+      {bookings.length === 0 && <p className="status-message">No bookings yet.</p>}
       {bookings.length > 0 && (
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>ID</th>
-              <th style={styles.th}>User ID</th>
-              <th style={styles.th}>Movie</th>
-              <th style={styles.th}>Theater</th>
-              <th style={styles.th}>Showtime</th>
-              <th style={styles.th}>Seats</th>
-              <th style={styles.th}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {bookings.map((booking) => {
-              const showtime = showtimesById[booking.showtime_id]
-              const movie = showtime ? moviesById[showtime.movie_id] : null
-              const theater = showtime ? theatersById[showtime.theater_id] : null
-              return (
-                <tr key={booking.id}>
-                  <td style={styles.td}>#{booking.id}</td>
-                  {/* No admin/users endpoint exists yet, so this shows the
-                      raw user_id rather than a name/email -- straightforward
-                      to upgrade later if a users-list endpoint gets added. */}
-                  <td style={styles.td}>{booking.user_id}</td>
-                  <td style={styles.td}>{movie?.title}</td>
-                  <td style={styles.td}>{theater?.name}</td>
-                  <td style={styles.td}>
-                    {showtime && new Date(showtime.start_time).toLocaleString()}
-                  </td>
-                  <td style={styles.td}>
-                    {booking.seats.map((s) => s.seat_number).sort().join(', ')}
-                  </td>
-                  <td style={styles.td}>{booking.status}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>User ID</th>
+                <th>Movie</th>
+                <th>Theater</th>
+                <th>Showtime</th>
+                <th>Seats</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bookings.map((booking) => {
+                const showtime = showtimesById[booking.showtime_id]
+                const movie = showtime ? moviesById[showtime.movie_id] : null
+                const theater = showtime ? theatersById[showtime.theater_id] : null
+                return (
+                  <tr key={booking.id}>
+                    <td>#{booking.id}</td>
+                    <td>{booking.user_id}</td>
+                    <td>{movie?.title}</td>
+                    <td>{theater?.name}</td>
+                    <td>{showtime && new Date(showtime.start_time).toLocaleString()}</td>
+                    <td>{booking.seats.map((s) => s.seat_number).sort().join(', ')}</td>
+                    <td>
+                      <span className={`badge ${booking.status === 'CONFIRMED' ? 'badge-success' : 'badge-muted'}`}>
+                        {booking.status}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )
-}
-
-const styles = {
-  status: { textAlign: 'center', marginTop: '3rem' },
-  container: { maxWidth: '900px', margin: '0 auto', padding: '1.5rem' },
-  table: { width: '100%', borderCollapse: 'collapse', background: '#fff', fontSize: '0.9rem' },
-  th: { textAlign: 'left', borderBottom: '2px solid #eee', padding: '0.5rem' },
-  td: { borderBottom: '1px solid #eee', padding: '0.5rem' },
 }
 
 export default AdminBookingsPage

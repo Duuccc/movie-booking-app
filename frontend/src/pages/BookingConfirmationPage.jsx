@@ -33,19 +33,21 @@ function BookingConfirmationPage() {
       .finally(() => setLoading(false))
   }, [bookingId])
 
-  if (loading) return <p style={styles.status}>Loading confirmation...</p>
-  if (error) return <p style={{ ...styles.status, color: '#e94560' }}>{error}</p>
+  if (loading) return <p className="status-message">Loading confirmation...</p>
+  if (error) return <p className="status-message error">{error}</p>
   if (!booking) return null
 
   const seatNumbers = booking.seats.map((s) => s.seat_number).sort().join(', ')
   const total = showtime ? (booking.total_seats * Number(showtime.price)).toFixed(2) : null
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h1 style={styles.heading}>Booking Confirmed</h1>
-        <p style={styles.statusLine}>Status: {booking.status}</p>
-        <dl style={styles.details}>
+    <div className="page-narrow">
+      <div className="card confirmation-card">
+        <div className="confirmation-check">&#10003;</div>
+        <h1 style={{ marginBottom: '0.2rem' }}>Booking Confirmed</h1>
+        <span className="badge badge-success">{booking.status}</span>
+
+        <dl className="confirmation-details">
           <dt>Movie</dt>
           <dd>{movie?.title}</dd>
           <dt>Theater</dt>
@@ -59,28 +61,14 @@ function BookingConfirmationPage() {
           <dt>Booking ID</dt>
           <dd>#{booking.id}</dd>
         </dl>
-        <div style={styles.actions}>
+
+        <div className="confirmation-actions">
           <Link to="/bookings">View My Bookings</Link>
           <Link to="/">Browse More Movies</Link>
         </div>
       </div>
     </div>
   )
-}
-
-const styles = {
-  status: { textAlign: 'center', marginTop: '3rem' },
-  container: { maxWidth: '480px', margin: '2rem auto', padding: '0 1rem' },
-  card: {
-    background: '#fff',
-    borderRadius: '8px',
-    padding: '1.5rem',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-  },
-  heading: { marginTop: 0 },
-  statusLine: { color: '#2e7d32', fontWeight: 'bold' },
-  details: { display: 'grid', gridTemplateColumns: '120px 1fr', rowGap: '0.4rem' },
-  actions: { display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' },
 }
 
 export default BookingConfirmationPage

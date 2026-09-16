@@ -11,65 +11,27 @@ function Navbar() {
   }
 
   return (
-    <nav style={styles.nav}>
-      <Link to="/" style={styles.brand}>Movie Booking</Link>
-      <div style={styles.links}>
+    <nav className="navbar">
+      <Link to="/" className="navbar-brand">Movie Booking</Link>
+      <div className="navbar-links">
         {user ? (
           <>
-            <Link to="/bookings" style={styles.link}>My Bookings</Link>
+            <Link to="/bookings" className="navbar-link">My Bookings</Link>
             {user.role === 'ADMIN' && (
-              <Link to="/admin" style={styles.link}>Admin</Link>
+              <Link to="/admin" className="navbar-link">Admin</Link>
             )}
-            <span style={styles.userLabel}>{user.name} ({user.role})</span>
-            <button onClick={handleLogout} style={styles.button}>Logout</button>
+            <span className="navbar-user">{user.name} · {user.role}</span>
+            <button onClick={handleLogout} className="navbar-logout">Logout</button>
           </>
         ) : (
           <>
-            <Link to="/login" style={styles.link}>Login</Link>
-            <Link to="/register" style={styles.link}>Register</Link>
+            <Link to="/login" className="navbar-link">Login</Link>
+            <Link to="/register" className="navbar-link">Register</Link>
           </>
         )}
       </div>
     </nav>
   )
-}
-
-const styles = {
-  nav: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '1rem 1.5rem',
-    background: '#1a1a2e',
-    color: '#fff',
-  },
-  brand: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: '1.25rem',
-    textDecoration: 'none',
-  },
-  links: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-  },
-  link: {
-    color: '#fff',
-    textDecoration: 'none',
-  },
-  userLabel: {
-    fontSize: '0.9rem',
-    opacity: 0.85,
-  },
-  button: {
-    background: '#e94560',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    padding: '0.4rem 0.8rem',
-    cursor: 'pointer',
-  },
 }
 
 export default Navbar
