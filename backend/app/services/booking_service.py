@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.models.showtime import Showtime
 from app.models.seat import Seat
-from app.models.booking import Booking, BookingStatus
+from app.models.booking import Booking, BookingStatus, PaymentStatus
 from app.models.booking_seat import BookingSeat
 from app.schemas.booking import BookingOut, BookingSeatOut
 
@@ -69,6 +69,8 @@ def create_booking(db: Session, user_id: int, showtime_id: int, seat_ids: List[i
     if showtime is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Showtime not found")
 
+    expire_bookings_for_showtime(db, showtime_id)
+
     seats = db.query(Seat).filter(Seat.id.in_(seat_ids)).all()
     if len(seats) != len(seat_ids):
         raise HTTPException(
@@ -117,11 +119,24 @@ def cancel_booking(db: Session, booking: Booking) -> Booking:
     up for that showtime -- but keeps the Booking row itself, marked
     CANCELLED, so "view booking history" still shows it.
     """
+    booking = db.query(Booking).filter(Booking.id == booking.id).with_for_update().first()
+
+    if booking is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found"
+        )
+    
     if booking.status == BookingStatus.CANCELLED:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Booking is already cancelled"
         )
 
+    if booking.payment_status == PaymentStatus.PAID:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot cancel a booking that has already been paid for",
+        )
+    
     for booking_seat in list(booking.booking_seats):
         db.delete(booking_seat)
     booking.status = BookingStatus.CANCELLED
@@ -165,3 +180,73 @@ def theater_has_confirmed_bookings(db: Session, theater_id: int) -> bool:
         .first()
         is not None
     )
+
+def expire_bookings_for_showtime(db: Session, showtime_id: int) -> int:
+    """
+    Cancels expired, unpaid bookings for one showtime and releases their
+    BookingSeat rows.
+
+    The Booking rows are locked with SELECT ... FOR UPDATE before we
+    cancel them. This prevents an expiration cleanup from racing with
+    payment for the same booking.
+
+    Returns the number of bookings that were expired.
+    """
+    now = datetime.now(timezone.utc)
+
+    expired_bookings = (
+        db.query(Booking)
+        .filter(
+            Booking.showtime_id == showtime_id,
+            Booking.status == BookingStatus.CONFIRMED,
+            Booking.payment_status == PaymentStatus.PENDING,
+            Booking.expires_at <= now,
+        )
+        .with_for_update()
+        .all()
+    )
+
+    for booking in expired_bookings:
+        for booking_seat in list(booking.booking_seats):
+            db.delete(booking_seat)
+
+        booking.status = BookingStatus.CANCELLED
+
+    if expired_bookings:
+        db.commit()
+
+    return len(expired_bookings)
+
+def expire_booking_if_needed(db: Session, booking_id: int) -> bool:
+    """
+    Locks a booking and expires it if it is still an unpaid booking
+    whose expiration time has passed.
+
+    Returns True if the booking was expired and cancelled.
+    """
+    now = datetime.now(timezone.utc)
+
+    booking = (
+        db.query(Booking)
+        .filter(Booking.id == booking_id)
+        .with_for_update()
+        .first()
+    )
+
+    if booking is None:
+        return False
+
+    if (
+        booking.status == BookingStatus.CONFIRMED
+        and booking.payment_status == PaymentStatus.PENDING
+        and booking.expires_at <= now
+    ):
+        for booking_seat in list(booking.booking_seats):
+            db.delete(booking_seat)
+
+        booking.status = BookingStatus.CANCELLED
+        db.commit()
+
+        return True
+
+    return False

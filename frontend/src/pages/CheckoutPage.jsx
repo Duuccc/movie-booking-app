@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { api, formatVnd } from '../services/api'
 
@@ -21,6 +21,11 @@ function CheckoutPage() {
   const [payError, setPayError] = useState('')
   const [paying, setPaying] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(null)
+  const payingRef = useRef(false)
+
+  useEffect(() => {
+    payingRef.current = paying
+  }, [paying])
 
   useEffect(() => {
     api
@@ -68,6 +73,7 @@ function CheckoutPage() {
 
     useEffect(() => {
         if (secondsLeft !== 0) return
+        if(payingRef.current) return
 
         async function expireBooking() {
             try {
@@ -80,8 +86,6 @@ function CheckoutPage() {
 
         expireBooking()
         }, [secondsLeft, bookingId, navigate])
-    const minutes = Math.floor(secondsLeft/60)
-    const seconds = secondsLeft % 60
 
   async function handlePay() {
     setPayError('')
@@ -163,7 +167,7 @@ function CheckoutPage() {
 
         {payError && <p className="error-text">{payError}</p>}
 
-        <button onClick={handlePay} disabled={paying} className="btn btn-primary btn-block">
+        <button onClick={handlePay} disabled={paying || secondsLeft === 0} className="btn btn-primary btn-block">
           {paying ? 'Processing...' : `Pay ${formatVnd(booking.total_amount)}`}
         </button>
 

@@ -17,7 +17,7 @@ from app.models.booking import Booking
 from app.schemas.booking import BookingCreate, BookingOut
 from app.schemas.payment import PaymentCreate, PaymentOut
 from app.auth.dependencies import get_current_user
-from app.services.booking_service import create_booking, cancel_booking, serialize_booking
+from app.services.booking_service import create_booking, cancel_booking, serialize_booking, expire_booking_if_needed
 from app.services.payment_service import pay_for_booking
 
 from datetime import datetime, timezone
@@ -56,6 +56,9 @@ def list_my_bookings(
         .order_by(Booking.created_at.desc())
         .all()
     )
+
+    for booking in bookings:
+        expire_booking_if_needed(db, booking.id)
     return [serialize_booking(b) for b in bookings]
 
 
@@ -66,6 +69,7 @@ def get_booking(
     current_user: User = Depends(get_current_user),
 ):
     booking = get_owned_booking_or_404(booking_id, current_user, db)
+    expire_booking_if_needed(db, booking_id)
     return serialize_booking(booking)
 
 

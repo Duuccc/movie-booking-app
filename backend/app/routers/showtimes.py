@@ -17,7 +17,7 @@ from app.models.seat import Seat
 from app.models.booking_seat import BookingSeat
 from app.schemas.showtime import ShowtimeCreate, ShowtimeUpdate, ShowtimeOut, SeatAvailability
 from app.auth.dependencies import require_admin
-from app.services.booking_service import showtime_has_confirmed_bookings
+from app.services.booking_service import showtime_has_confirmed_bookings, expire_bookings_for_showtime
 
 router = APIRouter(prefix="/showtimes", tags=["showtimes"])
 
@@ -113,6 +113,8 @@ def get_showtime_seats(showtime_id: int, db: Session = Depends(get_db)):
     seat (that's POST /bookings in Milestone 6).
     """
     showtime = get_showtime_or_404(showtime_id, db)
+
+    expire_bookings_for_showtime(db, showtime_id)
 
     seats = (
         db.query(Seat)

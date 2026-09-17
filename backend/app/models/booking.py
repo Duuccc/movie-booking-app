@@ -47,7 +47,7 @@ class Booking(Base):
     # customer actually owes must not change retroactively.
     total_amount = Column(Integer, nullable=False, default=0)  # whole VND
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    expires_at = Column(DateTime(timezone=True), nullable=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
 
     user = relationship("User", back_populates="bookings")
     showtime = relationship("Showtime", back_populates="bookings")

@@ -23,9 +23,7 @@ from sqlalchemy.orm import Session
 from app.models.booking import Booking, BookingStatus, PaymentStatus
 from app.models.payment import Payment, PaymentMethod
 
-from app.services.booking_service import cancel_booking
-
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 def _generate_reference(method: PaymentMethod) -> str:
     """Stands in for the transaction id a gateway would return."""
@@ -59,26 +57,52 @@ def pay_for_booking(
     the customer keeps their seats and can retry with another method,
     which is how real checkout flows behave.
     """
+    booking = (
+        db.query(Booking)
+        .filter(Booking.id == booking.id)
+        .with_for_update()
+        .first()
+    )
+
+    if booking is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Booking not found",
+        )
+
     if booking.status == BookingStatus.CANCELLED:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot pay for a cancelled booking",
         )
+
     if booking.payment_status == PaymentStatus.PAID:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This booking has already been paid for",
         )
 
+    # Check expiration while holding the booking lock.
     if booking.expires_at <= datetime.now(timezone.utc):
-        cancel_booking(db, booking)
+        for booking_seat in list(booking.booking_seats):
+            db.delete(booking_seat)
+
+        booking.status = BookingStatus.CANCELLED
+
+        db.commit()
 
         raise HTTPException(
-            status_code=400,
-            detail="Booking has expired"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Booking has expired",
         )
 
-    succeeded = _charge(booking.total_amount, method, simulate_failure)
+    # For the current MOCK payment, this is safe to perform
+    # inside the same database transaction.
+    succeeded = _charge(
+        booking.total_amount,
+        method,
+        simulate_failure,
+    )
 
     payment = Payment(
         booking_id=booking.id,
@@ -87,9 +111,16 @@ def pay_for_booking(
         reference=_generate_reference(method),
         succeeded=1 if succeeded else 0,
     )
+
     db.add(payment)
 
-    booking.payment_status = PaymentStatus.PAID if succeeded else PaymentStatus.PENDING
+    booking.payment_status = (
+        PaymentStatus.PAID
+        if succeeded
+        else PaymentStatus.PENDING
+    )
+
     db.commit()
     db.refresh(payment)
+
     return payment
