@@ -70,18 +70,19 @@ function HomePage() {
       <h1 className="page-title">Now Showing</h1>
       <p className="page-subtitle">Pick a date and time, grab your seats.</p>
 
-      <div className="day-row">
+      <div className="date-tabs">
         {DATES.map((d) => (
-          <button
+            <button
             key={d.key}
             type="button"
             onClick={() => setSelectedDate(d.key)}
-            className={'day-pill' + (selectedDate === d.key ? ' day-pill-active' : '')}
-          >
-            {d.label}
-          </button>
+            className={'date-tab' + (selectedDate === d.key ? ' date-tab-active' : '')}
+            >
+            <span className="date-tab-day">{d.dayNum}</span>
+            <span className="date-tab-weekday">{d.weekday}</span>
+            </button>
         ))}
-      </div>
+        </div>
 
       <div className="home-filters">
         <select

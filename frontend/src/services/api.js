@@ -43,11 +43,14 @@ export function getUpcomingDates(count = 7) {
     const d = new Date(today)
     d.setDate(d.getDate() + i)
     const key = toVnDateKey(d)
-    const label =
-      i === 0
-        ? 'Hôm nay'
-        : d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' })
-    return { key, label }
+    return {
+      key,
+      dayNum: d.toLocaleDateString('en-GB', { day: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }),
+      weekday:
+        i === 0
+          ? 'Hôm nay'
+          : d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'Asia/Ho_Chi_Minh' }),
+    }
   })
 }
 
