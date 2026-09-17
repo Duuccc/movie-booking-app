@@ -4,7 +4,7 @@ computes AVAILABLE/BOOKED per seat for one specific showtime.
 
 Browsing (GET) is public. Create/update/delete require require_admin.
 """
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -18,6 +18,11 @@ from app.models.booking_seat import BookingSeat
 from app.schemas.showtime import ShowtimeCreate, ShowtimeUpdate, ShowtimeOut, SeatAvailability
 from app.auth.dependencies import require_admin
 from app.services.booking_service import showtime_has_confirmed_bookings, expire_bookings_for_showtime
+
+from datetime import datetime, date as date_type, timedelta
+from zoneinfo import ZoneInfo
+
+VN_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 
 router = APIRouter(prefix="/showtimes", tags=["showtimes"])
 
@@ -37,8 +42,35 @@ def _validate_movie_and_theater(movie_id: int, theater_id: int, db: Session) -> 
 
 
 @router.get("", response_model=List[ShowtimeOut])
-def list_showtimes(db: Session = Depends(get_db)):
-    return db.query(Showtime).order_by(Showtime.start_time).all()
+def list_showtimes(
+    date: Optional[date_type] = None,
+    theater_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Both filters are optional and additive -- calling with no params
+    behaves exactly as before, so existing callers (if any still hit
+    this with no query string) are unaffected.
+
+    `date` is a calendar day (YYYY-MM-DD), interpreted in VN local time.
+    We convert that day's VN-local midnight-to-midnight boundaries into
+    UTC-aware datetimes before filtering, since start_time is stored
+    timezone-aware (DateTime(timezone=True)).
+    """
+    query = db.query(Showtime)
+
+    if theater_id is not None:
+        query = query.filter(Showtime.theater_id == theater_id)
+
+    if date is not None:
+        day_start = datetime.combine(date, datetime.min.time(), tzinfo=VN_TZ)
+        day_end = day_start + timedelta(days=1)
+        query = query.filter(
+            Showtime.start_time >= day_start,
+            Showtime.start_time < day_end,
+        )
+
+    return query.order_by(Showtime.start_time).all()
 
 
 @router.get("/{showtime_id}", response_model=ShowtimeOut)

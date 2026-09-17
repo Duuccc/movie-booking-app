@@ -17,6 +17,7 @@ import AdminMoviesPage from './pages/AdminMoviesPage'
 import AdminTheatersPage from './pages/AdminTheatersPage'
 import AdminShowtimesPage from './pages/AdminShowtimesPage'
 import AdminBookingsPage from './pages/AdminBookingsPage'
+import HomePage from './pages/HomePage'
 
 function App() {
   return (
@@ -24,7 +25,7 @@ function App() {
       <AuthProvider>
         <Navbar />
         <Routes>
-          <Route path="/" element={<MovieListPage />} />
+          <Route path="/" element={<HomePage />} />
           <Route path="/movies/:movieId" element={<MovieDetailsPage />} />
           <Route path="/movies/:movieId/showtimes" element={<ShowtimeSelectionPage />} />
           <Route

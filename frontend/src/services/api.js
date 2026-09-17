@@ -30,6 +30,27 @@ export function formatVnd(amount) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
 }
 
+export function toVnDateKey(d) {
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
+}
+
+// Today + next `count - 1` days, each as { key, label }, for the date
+// tab strip. label is short ("Hôm nay", "18/09") -- swap wording here if
+// you want it in English instead.
+export function getUpcomingDates(count = 7) {
+  const today = new Date()
+  return Array.from({ length: count }, (_, i) => {
+    const d = new Date(today)
+    d.setDate(d.getDate() + i)
+    const key = toVnDateKey(d)
+    const label =
+      i === 0
+        ? 'Hôm nay'
+        : d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' })
+    return { key, label }
+  })
+}
+
 function getToken() {
   return localStorage.getItem('token')
 }
@@ -90,7 +111,14 @@ export const api = {
   listTheaters: () => request('/theaters'),
   getTheater: (id) => request(`/theaters/${id}`),
 
-  listShowtimes: () => request('/showtimes'),
+  listShowtimes: ({date, theaterId} = {}) => {
+    const params = new URLSearchParams()
+    if(date) params.set("date", date)
+    if(theaterId) params.set("theater_id", theaterId)
+    
+    const query = params.toString()
+    return request(`/showtimes${query ? `?${query}` : ''}`)
+  },
   getShowtime: (id) => request(`/showtimes/${id}`),
   getShowtimeSeats: (id) => request(`/showtimes/${id}/seats`),
 
