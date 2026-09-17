@@ -14,6 +14,7 @@ function Navbar() {
     <nav className="navbar">
       <Link to="/" className="navbar-brand">Movie Booking</Link>
       <div className="navbar-links">
+        <Link to="/showtimes" className="navbar-link navbar-link-primary">Showtimes by Theaters</Link>
         {user ? (
           <>
             <Link to="/bookings" className="navbar-link">My Bookings</Link>

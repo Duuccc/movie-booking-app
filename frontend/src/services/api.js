@@ -48,7 +48,7 @@ export function getUpcomingDates(count = 7) {
       dayNum: d.toLocaleDateString('en-GB', { day: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }),
       weekday:
         i === 0
-          ? 'Hôm nay'
+          ? 'Today'
           : d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'Asia/Ho_Chi_Minh' }),
     }
   })
