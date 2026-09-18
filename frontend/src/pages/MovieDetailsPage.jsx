@@ -24,20 +24,21 @@ function MovieDetailsPage() {
   const embedUrl = movie.trailer_url ? resolveYoutubeEmbedUrl(movie.trailer_url) : null
 
   return (
-    <div className="page-medium">
+    <div className="page">
       <Link to="/" className="back-link">&larr; Back to movies</Link>
-      <div style={{ display: 'flex', gap: '2rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+
+      <div className="movie-details-layout">
         <PosterImage
           posterUrl={movie.poster_url}
           title={movie.title}
-          style={{ width: '220px', height: '330px', borderRadius: '10px', flexShrink: 0 }}
+          className="movie-details-poster"
         />
-        <div style={{ flex: 1, minWidth: '220px' }}>
-          <h1 style={{ marginTop: 0 }}>{movie.title}</h1>
-          <p style={{ color: 'var(--muted)' }}>
+        <div className="movie-details-info">
+          <h1 className="movie-details-title">{movie.title}</h1>
+          <p className="movie-details-meta">
             {movie.genre} · {movie.duration} min · {movie.release_date}
           </p>
-          <p style={{ lineHeight: 1.7 }}>{movie.description}</p>
+          <p className="movie-details-description">{movie.description}</p>
           <Link to={`/movies/${movieId}/showtimes`} className="btn btn-primary">
             View Showtimes
           </Link>
@@ -45,7 +46,7 @@ function MovieDetailsPage() {
       </div>
 
       {embedUrl && (
-        <div style={{ marginTop: '2.5rem' }}>
+        <div className="movie-details-trailer">
           <h3>Trailer</h3>
           <div className="trailer-frame">
             <iframe

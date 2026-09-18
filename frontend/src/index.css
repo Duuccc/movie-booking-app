@@ -277,6 +277,33 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 }
 .movie-card-meta { color: var(--muted); font-size: 0.82rem; margin: 0; }
 
+.movie-details-layout {
+  display: flex;
+  gap: 2.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+.movie-details-poster {
+  width: 280px;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+.movie-details-info {
+  flex: 1;
+  min-width: 320px;
+}
+.movie-details-title { margin-top: 0; }
+.movie-details-meta { color: var(--muted); }
+.movie-details-description { line-height: 1.7; }
+.movie-details-trailer {
+  margin-top: 2.5rem;
+  /* max-width: 640px; */
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .poster-fallback {
   display: flex;
   align-items: center;
