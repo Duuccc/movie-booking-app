@@ -12,12 +12,16 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.database import get_db
 from app.models.movie import Movie
+from app.models.showtime import Showtime
 from app.schemas.movie import MovieCreate, MovieUpdate, MovieOut
 from app.auth.dependencies import require_admin
 from app.services.booking_service import movie_has_confirmed_bookings
+
+from datetime import date as date_type, datetime, timezone, timezone
 
 router = APIRouter(prefix="/movies", tags=["movies"])
 
@@ -54,8 +58,20 @@ def _delete_poster_file_if_local(poster_url: Optional[str]) -> None:
 
 
 @router.get("", response_model=List[MovieOut])
-def list_movies(db: Session = Depends(get_db)):
-    return db.query(Movie).order_by(Movie.id).all()
+def list_movies(category: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(Movie)
+
+    if category == "showing":
+        now = datetime.now(timezone.utc)
+        showing_movie_ids = (
+            db.query(Showtime.movie_id).filter(Showtime.start_time >= now).distinct()
+        )
+        query = query.filter(Movie.id.in_(showing_movie_ids))
+    elif category == "coming_soon":
+        today = date_type.today()
+        query = query.filter(Movie.release_date > today)
+
+    return query.all()
 
 
 @router.get("/{movie_id}", response_model=MovieOut)
@@ -164,3 +180,5 @@ def delete_movie(
     db.commit()
     _delete_poster_file_if_local(poster_url)
     return None
+
+print(date_type.today())

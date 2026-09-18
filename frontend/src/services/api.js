@@ -108,7 +108,12 @@ export const api = {
 
   getCurrentUser: () => request('/auth/me', { auth: true }),
 
-  listMovies: () => request('/movies'),
+  listMovies: (category) => {
+    const params = new URLSearchParams()
+    if (category) params.set("category", category)
+    const query = params.toString()
+    return request(`/movies${query ? `?${query}` : ''}`)
+  },
   getMovie: (id) => request(`/movies/${id}`),
 
   listTheaters: () => request('/theaters'),

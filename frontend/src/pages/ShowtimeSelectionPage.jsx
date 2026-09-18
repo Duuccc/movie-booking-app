@@ -1,72 +1,78 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { api } from '../services/api'
+// pages/ShowtimeSelectionPage.jsx
+import { useEffect, useState, useMemo } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import { api, getUpcomingDates } from '../services/api'
 
-// 'en-CA' reliably produces YYYY-MM-DD regardless of the browser's
-// locale/timezone settings -- we need that as a stable grouping key,
-// separate from whatever human-readable label we show in the UI.
-function getDayKey(startTime) {
-  return new Date(startTime).toLocaleDateString('en-CA')
-}
+const DATES = getUpcomingDates(7)
 
-function getDayLabel(startTime) {
-  return new Date(startTime).toLocaleDateString([], {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
+function formatTime(isoString) {
+  return new Date(isoString).toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Ho_Chi_Minh',
   })
 }
 
 function ShowtimeSelectionPage() {
   const { movieId } = useParams()
-  const navigate = useNavigate()
   const [movie, setMovie] = useState(null)
+  const [theaters, setTheaters] = useState([])
+  const [selectedDate, setSelectedDate] = useState(DATES[0].key)
+  const [selectedTheaterId, setSelectedTheaterId] = useState('')
   const [showtimes, setShowtimes] = useState([])
-  const [theaters, setTheaters] = useState({})
-  const [selectedDay, setSelectedDay] = useState(null)
+  const [availability, setAvailability] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    Promise.all([api.getMovie(movieId), api.listShowtimes(), api.listTheaters()])
-      .then(([movieData, allShowtimes, allTheaters]) => {
-        const now = new Date()
+    Promise.all([api.getMovie(movieId), api.listTheaters()])
+      .then(([movieData, theaterData]) => {
+        setMovie(movieData)
+        setTheaters(theaterData)
+      })
+      .catch((err) => setError(err.message))
+  }, [movieId])
+
+  useEffect(() => {
+    setLoading(true)
+    api
+      .listShowtimes({ date: selectedDate, theaterId: selectedTheaterId || undefined })
+      .then((allShowtimes) => {
+        // Backend filters by date/theater but not by movie -- narrow to
+        // this movie client-side, same as the page's original behavior.
         const forMovie = allShowtimes
-          .filter((s) => s.movie_id === Number(movieId) && new Date(s.start_time) >= now)
+          .filter((s) => s.movie_id === Number(movieId))
           .slice()
           .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
-        setMovie(movieData)
         setShowtimes(forMovie)
-        setTheaters(Object.fromEntries(allTheaters.map((t) => [t.id, t])))
-        if (forMovie.length > 0) setSelectedDay(getDayKey(forMovie[0].start_time))
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [movieId])
+  }, [movieId, selectedDate, selectedTheaterId])
 
-  if (loading) return <p className="status-message">Loading showtimes...</p>
-  if (error) return <p className="status-message error">{error}</p>
+  const now = Date.now()
+  const visibleShowtimes = useMemo(() => {
+    return selectedDate === DATES[0].key
+      ? showtimes.filter((s) => new Date(s.start_time).getTime() >= now)
+      : showtimes
+  }, [showtimes, selectedDate]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // One entry per distinct day, in chronological order (showtimes is
-  // already sorted, so first-seen order is correct order).
-  const days = []
-  const seenDayKeys = new Set()
-  for (const s of showtimes) {
-    const key = getDayKey(s.start_time)
-    if (!seenDayKeys.has(key)) {
-      seenDayKeys.add(key)
-      days.push({ key, label: getDayLabel(s.start_time) })
+  useEffect(() => {
+    if (visibleShowtimes.length === 0) {
+      setAvailability({})
+      return
     }
-  }
+    api
+      .listShowtimesAvailability(visibleShowtimes.map((s) => s.id))
+      .then((rows) => {
+        const map = {}
+        rows.forEach((r) => { map[r.showtime_id] = r.available_seats })
+        setAvailability(map)
+      })
+      .catch(() => {})
+  }, [visibleShowtimes])
 
-  const dayShowtimes = showtimes.filter((s) => getDayKey(s.start_time) === selectedDay)
-
-  const byTheater = dayShowtimes.reduce((acc, showtime) => {
-    const key = showtime.theater_id
-    if (!acc[key]) acc[key] = []
-    acc[key].push(showtime)
-    return acc
-  }, {})
+  if (error) return <p className="status-message error">{error}</p>
 
   return (
     <div className="page-medium">
@@ -76,51 +82,53 @@ function ShowtimeSelectionPage() {
       <h1 className="page-title">Showtimes</h1>
       <p className="page-subtitle">{movie?.title}</p>
 
-      {showtimes.length === 0 && (
-        <p className="status-message">No showtimes scheduled for this movie yet.</p>
+      <div className="field" style={{ maxWidth: 260 }}>
+        <select
+          className="input theater-select"
+          value={selectedTheaterId}
+          onChange={(e) => setSelectedTheaterId(e.target.value)}
+        >
+          <option value="">All theaters</option>
+          {theaters.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="date-tabs">
+        {DATES.map((d) => (
+          <button
+            key={d.key}
+            type="button"
+            onClick={() => setSelectedDate(d.key)}
+            className={'date-tab' + (selectedDate === d.key ? ' date-tab-active' : '')}
+          >
+            <span className="date-tab-day">{d.dayNum}</span>
+            <span className="date-tab-weekday">{d.weekday}</span>
+          </button>
+        ))}
+      </div>
+
+      {loading && <p className="status-message">Loading showtimes...</p>}
+
+      {!loading && visibleShowtimes.length === 0 && (
+        <p className="status-message">No showtimes for this date.</p>
       )}
 
-      {days.length > 0 && (
-        <div className="day-row">
-          {days.map((day) => (
-            <button
-              key={day.key}
-              onClick={() => setSelectedDay(day.key)}
-              className={'day-pill' + (day.key === selectedDay ? ' day-pill-active' : '')}
-            >
-              {day.label}
-            </button>
+      {!loading && visibleShowtimes.length > 0 && (
+        <div className="time-row">
+          {visibleShowtimes.map((showtime) => (
+            <Link key={showtime.id} to={`/showtimes/${showtime.id}/seats`} className="time-btn">
+              <span>{formatTime(showtime.start_time)}</span>
+              {availability[showtime.id] !== undefined && (
+                <span className="time-btn-seats">{availability[showtime.id]} seats left</span>
+              )}
+            </Link>
           ))}
         </div>
       )}
-
-      {showtimes.length > 0 && dayShowtimes.length === 0 && (
-        <p className="status-message">No showtimes on this day.</p>
-      )}
-
-      {Object.entries(byTheater).map(([theaterId, theaterShowtimes]) => (
-        <div key={theaterId} className="theater-block">
-          <h3 className="theater-name">{theaters[theaterId]?.name || 'Theater'}</h3>
-          <p className="theater-location">{theaters[theaterId]?.location}</p>
-          <div className="time-row">
-            {theaterShowtimes
-              .slice()
-              .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
-              .map((showtime) => (
-                <button
-                  key={showtime.id}
-                  className="time-btn"
-                  onClick={() => navigate(`/showtimes/${showtime.id}/seats`)}
-                >
-                  {new Date(showtime.start_time).toLocaleString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </button>
-              ))}
-          </div>
-        </div>
-      ))}
     </div>
   )
 }

@@ -722,3 +722,25 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   font-size: 0.85rem;
   margin: 0 0 0.75rem;
 }
+
+.category-tabs {
+  display: flex;
+  gap: 1.75rem;
+  border-bottom: 1px solid var(--border);
+  margin: 0 0 1.75rem;
+}
+.category-tab {
+  padding: 0.6rem 0.1rem 0.9rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+}
+.category-tab:hover { color: var(--ink); }
+.category-tab-active {
+  color: var(--accent-dark);
+  border-bottom-color: var(--accent);
+}
