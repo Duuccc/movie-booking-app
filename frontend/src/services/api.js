@@ -163,4 +163,9 @@ export const api = {
   updateShowtime: (id, payload) =>
     request(`/showtimes/${id}`, { method: 'PUT', auth: true, body: payload }),
   deleteShowtime: (id) => request(`/showtimes/${id}`, { method: 'DELETE', auth: true }),
+  listShowtimesAvailability: (showtimeIds) => {
+    const params = new URLSearchParams()
+    showtimeIds.forEach((id) => params.append('showtime_id', id))
+    return request(`/showtimes/availability?${params.toString()}`)
+  },
 }

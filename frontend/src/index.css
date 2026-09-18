@@ -303,7 +303,11 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 .theater-location { color: var(--muted); font-size: 0.85rem; margin: 0 0 0.75rem; }
 .time-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
 .time-btn {
-  padding: 0.55rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.5rem 1.1rem;
   border: 1px solid var(--ink);
   border-radius: var(--radius-sm);
   background: var(--paper);
@@ -311,8 +315,14 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   cursor: pointer;
   font-weight: 500;
   font-size: 0.9rem;
+  text-decoration: none;
 }
 .time-btn:hover { background: var(--ink); color: #fff; }
+.time-btn-seats {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+.time-btn:hover .time-btn-seats { color: rgba(255, 255, 255, 0.75); }
 
 /* ============================================================
    Seat map

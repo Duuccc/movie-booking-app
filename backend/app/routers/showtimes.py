@@ -6,7 +6,7 @@ Browsing (GET) is public. Create/update/delete require require_admin.
 """
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -15,9 +15,9 @@ from app.models.movie import Movie
 from app.models.theater import Theater
 from app.models.seat import Seat
 from app.models.booking_seat import BookingSeat
-from app.schemas.showtime import ShowtimeCreate, ShowtimeUpdate, ShowtimeOut, SeatAvailability
+from app.schemas.showtime import ShowtimeCreate, ShowtimeUpdate, ShowtimeOut, SeatAvailability, ShowtimeAvailability
 from app.auth.dependencies import require_admin
-from app.services.booking_service import showtime_has_confirmed_bookings, expire_bookings_for_showtime
+from app.services.booking_service import showtime_has_confirmed_bookings, expire_bookings_for_showtime, get_availability_for_showtimes
 
 from datetime import datetime, date as date_type, timedelta
 from zoneinfo import ZoneInfo
@@ -72,6 +72,21 @@ def list_showtimes(
 
     return query.order_by(Showtime.start_time).all()
 
+@router.get("/availability", response_model=List[ShowtimeAvailability])
+def get_showtimes_availability(
+    showtime_id: List[int] = Query(..., alias="showtime_id"),
+    db: Session = Depends(get_db),
+):
+    """
+    Batch seat-count lookup for a set of showtimes -- one request for a
+    whole page of showtime buttons instead of one per button. Call as
+    /showtimes/availability?showtime_id=1&showtime_id=2&showtime_id=3
+    """
+    availability = get_availability_for_showtimes(db, showtime_id)
+    return [
+        ShowtimeAvailability(showtime_id=sid, available_seats=count)
+        for sid, count in availability.items()
+    ]
 
 @router.get("/{showtime_id}", response_model=ShowtimeOut)
 def get_showtime(showtime_id: int, db: Session = Depends(get_db)):
@@ -170,3 +185,4 @@ def get_showtime_seats(showtime_id: int, db: Session = Depends(get_db)):
         )
         for seat in seats
     ]
+

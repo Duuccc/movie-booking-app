@@ -1,5 +1,5 @@
 // pages/ShowtimesPage.jsx
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { api, getUpcomingDates, resolvePosterUrl } from '../services/api'
 import PosterImage from '../components/PosterImage'
@@ -22,6 +22,7 @@ function ShowtimesPage() {
   const [showtimes, setShowtimes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [availability, setAvailability] = useState({}) // { [showtimeId]: count }
 
   useEffect(() => {
     Promise.all([api.listTheaters(), api.listMovies()])
@@ -41,12 +42,30 @@ function ShowtimesPage() {
       .finally(() => setLoading(false))
   }, [selectedDate, selectedTheaterId])
 
+
   const movieById = new Map(movies.map((m) => [m.id, m]))
   const now = Date.now()
-  const visibleShowtimes =
-    selectedDate === DATES[0].key
+  const visibleShowtimes = useMemo(() => {
+    return selectedDate === DATES[0].key
       ? showtimes.filter((s) => new Date(s.start_time).getTime() >= now)
       : showtimes
+  }, [showtimes, selectedDate])
+
+  useEffect(() => {
+    if (visibleShowtimes.length === 0) {
+      setAvailability({})
+      return
+    }
+    const ids = visibleShowtimes.map((s) => s.id)
+    api
+      .listShowtimesAvailability(ids)
+      .then((rows) => {
+        const map = {}
+        rows.forEach((r) => { map[r.showtime_id] = r.available_seats })
+        setAvailability(map)
+      })
+      .catch(() => {}) // seat counts are a nice-to-have -- a failure here shouldn't break the page
+  }, [visibleShowtimes])
 
   const groups = new Map()
   for (const showtime of visibleShowtimes) {
@@ -117,7 +136,10 @@ function ShowtimesPage() {
                 <div className="time-row">
                   {movieShowtimes.map((s) => (
                     <Link key={s.id} to={`/showtimes/${s.id}/seats`} className="time-btn">
-                      {formatTime(s.start_time)}
+                      <span>{formatTime(s.start_time)}</span>
+                      {availability[s.id] !== undefined && (
+                        <span className="time-btn-seats">{availability[s.id]} seats left</span>
+                      )}
                     </Link>
                   ))}
                 </div>

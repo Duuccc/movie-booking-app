@@ -2,11 +2,12 @@
 Booking business logic. create_booking() is the most important function
 in this project -- it's where double-booking prevention actually happens.
 """
-from typing import List
+from typing import List, Dict
 
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.models.showtime import Showtime
 from app.models.seat import Seat
@@ -92,7 +93,7 @@ def create_booking(db: Session, user_id: int, showtime_id: int, seat_ids: List[i
         # Snapshot the price now. If an admin edits the showtime price
         # later, this customer still owes what they agreed to.
         total_amount=len(seat_ids) * showtime.price,
-        expires_at= datetime.now(timezone.utc) + timedelta(minutes=5)
+        expires_at= datetime.now(timezone.utc) + timedelta(minutes=15)
     )
     db.add(booking)
     db.flush()  # assigns booking.id without committing yet
@@ -161,6 +162,38 @@ def showtime_has_confirmed_bookings(db: Session, showtime_id: int) -> bool:
         is not None
     )
 
+def get_availability_for_showtimes(db: Session, showtime_ids: List[int]) -> Dict[int, int]:
+    """
+    Returns {showtime_id: available_seat_count} for the given showtimes,
+    in 3 queries total regardless of how many showtimes are in the batch.
+
+    "Available" here matches GET /showtimes/{id}/seats exactly: any seat
+    with a BookingSeat row is counted as taken, regardless of whether
+    that booking's payment_status is PENDING or PAID, or whether it's
+    since expired but not yet lazily cleaned up. Same definition of
+    "booked" everywhere in the app, on purpose.
+    """
+    showtimes = db.query(Showtime).filter(Showtime.id.in_(showtime_ids)).all()
+
+    theater_ids = {s.theater_id for s in showtimes}
+    total_seats_by_theater = dict(
+        db.query(Seat.theater_id, func.count(Seat.id))
+        .filter(Seat.theater_id.in_(theater_ids))
+        .group_by(Seat.theater_id)
+        .all()
+    )
+
+    booked_by_showtime = dict(
+        db.query(BookingSeat.showtime_id, func.count(BookingSeat.id))
+        .filter(BookingSeat.showtime_id.in_(showtime_ids))
+        .group_by(BookingSeat.showtime_id)
+        .all()
+    )
+
+    return {
+        s.id: total_seats_by_theater.get(s.theater_id, 0) - booked_by_showtime.get(s.id, 0)
+        for s in showtimes
+    }
 
 def movie_has_confirmed_bookings(db: Session, movie_id: int) -> bool:
     return (

@@ -38,3 +38,7 @@ class SeatAvailability(BaseModel):
     seat_id: int
     seat_number: str
     status: str  # "AVAILABLE" | "BOOKED"
+
+class ShowtimeAvailability(BaseModel):
+    showtime_id: int
+    available_seats: int
