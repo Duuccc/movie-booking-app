@@ -6,6 +6,7 @@ import PosterImage from '../components/PosterImage'
 const CATEGORIES = [
   { key: 'showing', label: 'Now Showing' },
   { key: 'coming_soon', label: 'Coming Soon' },
+  { key: 'trending', label: 'Trending' },
 ]
 
 function MovieListPage() {

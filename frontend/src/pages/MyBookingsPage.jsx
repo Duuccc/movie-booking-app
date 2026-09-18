@@ -82,7 +82,7 @@ function MyBookingsPage() {
                   Pay now
                 </Link>
               )}
-              {booking.status === 'CONFIRMED' && (
+              {booking.status === 'CONFIRMED' && booking.payment_status !== "PAID" && (
                 <button
                   onClick={() => handleCancel(booking.id)}
                   disabled={cancellingId === booking.id}

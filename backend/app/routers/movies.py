@@ -17,11 +17,13 @@ from sqlalchemy import func
 from app.database import get_db
 from app.models.movie import Movie
 from app.models.showtime import Showtime
+from app.models.booking import Booking, BookingStatus
+from app.models.booking_seat import BookingSeat
 from app.schemas.movie import MovieCreate, MovieUpdate, MovieOut
 from app.auth.dependencies import require_admin
 from app.services.booking_service import movie_has_confirmed_bookings
 
-from datetime import date as date_type, datetime, timezone, timezone
+from datetime import date as date_type, datetime, timezone, timedelta
 
 router = APIRouter(prefix="/movies", tags=["movies"])
 
@@ -59,6 +61,29 @@ def _delete_poster_file_if_local(poster_url: Optional[str]) -> None:
 
 @router.get("", response_model=List[MovieOut])
 def list_movies(category: Optional[str] = None, db: Session = Depends(get_db)):
+    if category == "trending":
+        window_start = datetime.now(timezone.utc) - timedelta(days=14)
+
+        trending_rows = (
+            db.query(Showtime.movie_id, func.count(BookingSeat.id).label("seat_count"))
+            .join(BookingSeat, BookingSeat.showtime_id == Showtime.id)
+            .join(Booking, Booking.id == BookingSeat.booking_id)
+            .filter(Booking.status == BookingStatus.CONFIRMED)
+            .filter(Booking.created_at >= window_start)
+            .group_by(Showtime.movie_id)
+            .order_by(func.count(BookingSeat.id).desc())
+            .limit(10).all()
+        )
+
+        trending_ids = [row.movie_id for row in trending_rows]
+        if not trending_ids:
+            return []
+
+        movies_by_id = {
+            m.id: m for m in db.query(Movie).filter(Movie.id.in_(trending_ids)).all()
+        }
+        return [movies_by_id[mid] for mid in trending_ids if mid in movies_by_id]
+    
     query = db.query(Movie)
 
     if category == "showing":
