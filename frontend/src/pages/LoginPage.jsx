@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 function LoginPage() {
@@ -9,6 +9,7 @@ function LoginPage() {
   const [submitting, setSubmitting] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -16,7 +17,12 @@ function LoginPage() {
     setSubmitting(true)
     try {
       await login(email, password)
-      navigate('/')
+      const from = location.state?.from
+      if(from) {
+        navigate(`${from.pathname}${from.search || ''}`, {replace: true, state: from.state})
+      } else{
+        navigate("/")
+      }
     } catch (err) {
       setError(err.message)
     } finally {

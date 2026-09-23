@@ -32,9 +32,7 @@ function App() {
           <Route
             path="/showtimes/:showtimeId/seats"
             element={
-              <ProtectedRoute>
                 <SeatSelectionPage />
-              </ProtectedRoute>
             }
           />
           <Route

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { api, formatVnd } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 
 function parseSeat(seatNumber) {
   const match = seatNumber.match(/^([A-Za-z]+)(\d+)$/)
@@ -11,11 +12,17 @@ function parseSeat(seatNumber) {
 function SeatSelectionPage() {
   const { showtimeId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const { user } = useAuth()
   const [showtime, setShowtime] = useState(null)
   const [movie, setMovie] = useState(null)
   const [theater, setTheater] = useState(null)
   const [seats, setSeats] = useState([])
-  const [selectedSeatIds, setSelectedSeatIds] = useState([])
+  // Restored from location.state if we're bouncing back from a login
+  // redirect (see handleConfirm below) -- otherwise starts empty as before.
+  const [selectedSeatIds, setSelectedSeatIds] = useState(
+    () => location.state?.selectedSeatIds || []
+  )
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -51,6 +58,19 @@ function SeatSelectionPage() {
   }
 
   async function handleConfirm() {
+    if (!user) {
+      navigate('/login', {
+        state: {
+          from: {
+            pathname: location.pathname,
+            search: location.search,
+            state: { selectedSeatIds },
+          },
+        },
+      })
+      return
+    }
+
     setBookingError('')
     setSubmitting(true)
     try {
@@ -147,7 +167,7 @@ function SeatSelectionPage() {
           disabled={selectedSeatIds.length === 0 || submitting}
           className="btn btn-primary"
         >
-          {submitting ? 'Booking...' : 'Confirm Booking'}
+          {submitting ? 'Booking...' : user ? 'Confirm Booking' : 'Log In to Book'}
         </button>
       </div>
     </div>
