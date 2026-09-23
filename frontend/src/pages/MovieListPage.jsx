@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../services/api'
 import PosterImage from '../components/PosterImage'
 
@@ -10,7 +10,8 @@ const CATEGORIES = [
 ]
 
 function MovieListPage() {
-  const [category, setCategory] = useState(CATEGORIES[0].key)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const category = searchParams.get("category") || CATEGORIES[0].key
   const [movies, setMovies] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -24,6 +25,14 @@ function MovieListPage() {
       .finally(() => setLoading(false))
   }, [category])
 
+  function selectCategory(key) {
+    if(key === CATEGORIES[0].key) {
+      setSearchParams({})
+    } else {
+      setSearchParams({ category: key })
+    }
+  }
+
   return (
     <div className="page">
       <h1 className="page-title">Movies</h1>
@@ -34,7 +43,7 @@ function MovieListPage() {
           <button
             key={c.key}
             type="button"
-            onClick={() => setCategory(c.key)}
+            onClick={() => selectCategory(c.key)}
             className={'category-tab' + (category === c.key ? ' category-tab-active' : '')}
           >
             {c.label}

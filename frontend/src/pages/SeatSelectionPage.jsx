@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link , Navigate} from 'react-router-dom'
 import { api, formatVnd } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 
@@ -18,8 +18,6 @@ function SeatSelectionPage() {
   const [movie, setMovie] = useState(null)
   const [theater, setTheater] = useState(null)
   const [seats, setSeats] = useState([])
-  // Restored from location.state if we're bouncing back from a login
-  // redirect (see handleConfirm below) -- otherwise starts empty as before.
   const [selectedSeatIds, setSelectedSeatIds] = useState(
     () => location.state?.selectedSeatIds || []
   )
@@ -108,7 +106,10 @@ function SeatSelectionPage() {
 
   return (
     <div className="page-medium">
-      <Link to={`/movies/${showtime?.movie_id}/showtimes`} className="back-link">&larr; Back to showtimes</Link>
+      {/* <Link to={`/movies/${showtime?.movie_id}/showtimes`} className="back-link">&larr; Back to showtimes</Link> */}
+      <button onClick={() => navigate(-1)} className="back-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+        &larr; Back to showtimes
+      </button>
       <h1 style={{ marginBottom: '0.15rem' }}>{movie?.title}</h1>
       <p style={{ color: 'var(--muted)' }}>
         {theater?.name} · {showtime && new Date(showtime.start_time).toLocaleString()}

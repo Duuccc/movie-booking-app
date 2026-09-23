@@ -1,7 +1,6 @@
-// pages/ShowtimesPage.jsx
 import { useEffect, useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
-import { api, getUpcomingDates, resolvePosterUrl } from '../services/api'
+import { Link, useSearchParams } from 'react-router-dom'
+import { api, getUpcomingDates } from '../services/api'
 import PosterImage from '../components/PosterImage'
 
 const DATES = getUpcomingDates(7)
@@ -15,14 +14,30 @@ function formatTime(isoString) {
 }
 
 function ShowtimesPage() {
-  const [selectedDate, setSelectedDate] = useState(DATES[0].key)
-  const [selectedTheaterId, setSelectedTheaterId] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const selectedDate = searchParams.get('date') || DATES[0].key
+  const selectedTheaterId = searchParams.get('theater_id') || ''
+
+  function updateParams(updates) {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        Object.entries(updates).forEach(([key, value]) => {
+          if (!value) next.delete(key)
+          else next.set(key, value)
+        })
+        return next
+      },
+      { replace: true }
+    )
+  }
+
   const [theaters, setTheaters] = useState([])
   const [movies, setMovies] = useState([])
   const [showtimes, setShowtimes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [availability, setAvailability] = useState({}) // { [showtimeId]: count }
+  const [availability, setAvailability] = useState({})
 
   useEffect(() => {
     Promise.all([api.listTheaters(), api.listMovies()])
@@ -42,14 +57,13 @@ function ShowtimesPage() {
       .finally(() => setLoading(false))
   }, [selectedDate, selectedTheaterId])
 
-
   const movieById = new Map(movies.map((m) => [m.id, m]))
   const now = Date.now()
   const visibleShowtimes = useMemo(() => {
     return selectedDate === DATES[0].key
       ? showtimes.filter((s) => new Date(s.start_time).getTime() >= now)
       : showtimes
-  }, [showtimes, selectedDate])
+  }, [showtimes, selectedDate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (visibleShowtimes.length === 0) {
@@ -64,7 +78,7 @@ function ShowtimesPage() {
         rows.forEach((r) => { map[r.showtime_id] = r.available_seats })
         setAvailability(map)
       })
-      .catch(() => {}) // seat counts are a nice-to-have -- a failure here shouldn't break the page
+      .catch(() => {})
   }, [visibleShowtimes])
 
   const groups = new Map()
@@ -78,15 +92,12 @@ function ShowtimesPage() {
 
   return (
     <>
-      {/* Secondary header strip -- mimics Beta's layout of a filter row
-          sitting directly under the main navbar, but scoped to this page
-          only (Navbar itself stays theater-agnostic). */}
       <div className="schedule-subheader">
         <div className="schedule-subheader-inner">
           <select
             className="input theater-select"
             value={selectedTheaterId}
-            onChange={(e) => setSelectedTheaterId(e.target.value)}
+            onChange={(e) => updateParams({ theater_id: e.target.value })}
           >
             <option value="">All theaters</option>
             {theaters.map((t) => (
@@ -104,7 +115,7 @@ function ShowtimesPage() {
             <button
               key={d.key}
               type="button"
-              onClick={() => setSelectedDate(d.key)}
+              onClick={() => updateParams({ date: d.key === DATES[0].key ? null : d.key })}
               className={'date-tab' + (selectedDate === d.key ? ' date-tab-active' : '')}
             >
               <span className="date-tab-day">{d.dayNum}</span>

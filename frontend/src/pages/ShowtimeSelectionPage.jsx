@@ -1,6 +1,5 @@
-// pages/ShowtimeSelectionPage.jsx
 import { useEffect, useState, useMemo } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { api, getUpcomingDates } from '../services/api'
 
 const DATES = getUpcomingDates(7)
@@ -15,10 +14,28 @@ function formatTime(isoString) {
 
 function ShowtimeSelectionPage() {
   const { movieId } = useParams()
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const selectedDate = searchParams.get('date') || DATES[0].key
+  const selectedTheaterId = searchParams.get('theater_id') || ''
+
+  function updateParams(updates) {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        Object.entries(updates).forEach(([key, value]) => {
+          if (!value) next.delete(key)
+          else next.set(key, value)
+        })
+        return next
+      },
+      { replace: true } // filter changes shouldn't each get their own back-button stop
+    )
+  }
+
   const [movie, setMovie] = useState(null)
   const [theaters, setTheaters] = useState([])
-  const [selectedDate, setSelectedDate] = useState(DATES[0].key)
-  const [selectedTheaterId, setSelectedTheaterId] = useState('')
   const [showtimes, setShowtimes] = useState([])
   const [availability, setAvailability] = useState({})
   const [loading, setLoading] = useState(true)
@@ -38,8 +55,6 @@ function ShowtimeSelectionPage() {
     api
       .listShowtimes({ date: selectedDate, theaterId: selectedTheaterId || undefined })
       .then((allShowtimes) => {
-        // Backend filters by date/theater but not by movie -- narrow to
-        // this movie client-side, same as the page's original behavior.
         const forMovie = allShowtimes
           .filter((s) => s.movie_id === Number(movieId))
           .slice()
@@ -76,9 +91,9 @@ function ShowtimeSelectionPage() {
 
   return (
     <div className="page-medium">
-      <Link to={`/movies/${movieId}`} className="back-link">
+      <button onClick={() => navigate(-1)} className="back-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
         &larr; Back to {movie?.title || 'movie'}
-      </Link>
+      </button>
       <h1 className="page-title">Showtimes</h1>
       <p className="page-subtitle">{movie?.title}</p>
 
@@ -86,7 +101,7 @@ function ShowtimeSelectionPage() {
         <select
           className="input theater-select"
           value={selectedTheaterId}
-          onChange={(e) => setSelectedTheaterId(e.target.value)}
+          onChange={(e) => updateParams({ theater_id: e.target.value })}
         >
           <option value="">All theaters</option>
           {theaters.map((t) => (
@@ -102,7 +117,7 @@ function ShowtimeSelectionPage() {
           <button
             key={d.key}
             type="button"
-            onClick={() => setSelectedDate(d.key)}
+            onClick={() => updateParams({ date: d.key === DATES[0].key ? null : d.key })}
             className={'date-tab' + (selectedDate === d.key ? ' date-tab-active' : '')}
           >
             <span className="date-tab-day">{d.dayNum}</span>

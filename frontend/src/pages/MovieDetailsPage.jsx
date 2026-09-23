@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api, resolveYoutubeEmbedUrl } from '../services/api'
 import PosterImage from '../components/PosterImage'
 
 function MovieDetailsPage() {
   const { movieId } = useParams()
+  const navigate = useNavigate()
   const [movie, setMovie] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -25,7 +26,9 @@ function MovieDetailsPage() {
 
   return (
     <div className="page">
-      <Link to="/" className="back-link">&larr; Back to movies</Link>
+      <button onClick={() => navigate(-1)} className="back-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+        &larr; Back to movies
+      </button>
 
       <div className="movie-details-layout">
         <PosterImage
