@@ -142,10 +142,11 @@ function ShowtimesPage() {
                 <PosterImage posterUrl={movie.poster_url} title={movie.title} style={{ width: '100%', height: '100%' }} />
               </Link>
               <div className="showtime-movie-info">
-                <p className="movie-details-tag">{movie.genre}</p>
                 <Link to={`/movies/${movie.id}`} className="showtime-movie-title-link">
                   <h3 className="showtime-movie-title">{movie.title}</h3>
                 </Link>
+                <p className="movie-details-tag">{movie.genre}</p>
+
                 <p className="showtime-movie-meta">{movie.duration} min</p>
                 <div className="time-row">
                   {movieShowtimes.map((s) => (

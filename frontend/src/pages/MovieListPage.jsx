@@ -66,7 +66,7 @@ function MovieListPage() {
         <div className="movie-grid">
           {movies.map((movie, i) => (
             <Link to={`/movies/${movie.id}`} key={movie.id} className="movie-card">
-              <span className="movie-card-index">{String(i + 1).padStart(2, '0')}</span>
+              {/* <span className="movie-card-index">{String(i + 1).padStart(2, '0')}</span> */}
               <PosterImage
                 posterUrl={movie.poster_url}
                 title={movie.title}
@@ -74,7 +74,8 @@ function MovieListPage() {
               />
               <div className="movie-card-body">
                 <h3 className="movie-card-title">{movie.title}</h3>
-                <p className="movie-card-meta">{movie.genre} · {movie.duration} min</p>
+                <p className="movie-card-meta">{movie.genre}</p>
+                <p className="movie-card-meta">{movie.duration} min</p>
               </div>
             </Link>
           ))}

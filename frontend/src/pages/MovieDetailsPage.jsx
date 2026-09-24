@@ -37,8 +37,8 @@ function MovieDetailsPage() {
           className="movie-details-poster"
         />
         <div className="movie-details-info">
-          <p className="movie-details-tag">{movie.genre}</p>
           <h1 className="movie-details-title">{movie.title}</h1>
+          <p className="movie-details-tag">{movie.genre}</p>
           <p className="movie-details-meta">
             {movie.duration} min &middot; {movie.release_date}
           </p>

@@ -17,7 +17,7 @@ from app.models.seat import Seat
 from app.models.booking_seat import BookingSeat
 from app.schemas.showtime import ShowtimeCreate, ShowtimeUpdate, ShowtimeOut, SeatAvailability, ShowtimeAvailability
 from app.auth.dependencies import require_admin
-from app.services.booking_service import showtime_has_confirmed_bookings, expire_bookings_for_showtime, get_availability_for_showtimes
+from app.services.booking_service import showtime_has_confirmed_bookings, expire_bookings_for_showtime, get_availability_for_showtimes, get_seat_price
 
 from datetime import datetime, date as date_type, timedelta
 from zoneinfo import ZoneInfo
@@ -181,6 +181,8 @@ def get_showtime_seats(showtime_id: int, db: Session = Depends(get_db)):
         SeatAvailability(
             seat_id=seat.id,
             seat_number=f"{seat.row}{seat.seat_number}",
+            seat_type=seat.seat_type.value,
+            price=get_seat_price(showtime.price, seat.seat_type),
             status="BOOKED" if seat.id in booked_seat_ids else "AVAILABLE",
         )
         for seat in seats

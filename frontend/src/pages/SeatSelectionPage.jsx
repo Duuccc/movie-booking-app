@@ -99,13 +99,15 @@ function SeatSelectionPage() {
   }
   const rowLetters = Object.keys(rows).sort()
 
-  const selectedSeatNumbers = seats
-    .filter((s) => selectedSeatIds.includes(s.seat_id))
+  const selectedSeats = seats.filter((s) => selectedSeatIds.includes(s.seat_id))
+  const selectedSeatNumbers = selectedSeats
     .map((s) => s.seat_number)
     .sort()
 
+  const selectedTotal = selectedSeats.reduce((sum, s) => sum + s.price, 0)
+
   return (
-    <div className="page-medium">
+    <div className="page">
       <button onClick={() => navigate(-1)} className="back-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
         &larr; Back to showtimes
       </button>
@@ -138,9 +140,12 @@ function SeatSelectionPage() {
                     key={seat.seat_id}
                     onClick={() => toggleSeat(seat)}
                     disabled={isBooked}
-                    title={seat.seat_number}
+                    title={`${seat.seat_number} (${seat.seat_type})`}
                     className={
-                      'seat' + (isBooked ? ' seat-booked' : isSelected ? ' seat-selected' : '')
+                      'seat' +
+                      (isBooked ? ' seat-booked' : isSelected ? ' seat-selected' : '') +
+                      (!isBooked && seat.seat_type === 'VIP' ? ' seat-vip' : '') +
+                      (!isBooked && seat.seat_type === 'COUPLE' ? ' seat-couple' : '')
                     }
                   >
                     {seat.seat_number}
@@ -152,7 +157,9 @@ function SeatSelectionPage() {
       </div>
 
       <div className="seat-legend">
-        <span><span className="seat-legend-swatch seat-legend-swatch-available" /> Available</span>
+        <span><span className="seat-legend-swatch seat-legend-swatch-available" /> Standard</span>
+        <span><span className="seat-legend-swatch seat-legend-swatch-vip" /> VIP</span>
+        <span><span className="seat-legend-swatch seat-legend-swatch-couple" /> Couple</span>
         <span><span className="seat-legend-swatch seat-legend-swatch-selected" /> Selected</span>
         <span><span className="seat-legend-swatch seat-legend-swatch-booked" /> Booked</span>
       </div>
@@ -162,11 +169,9 @@ function SeatSelectionPage() {
           {selectedSeatNumbers.length ? selectedSeatNumbers.join(', ') : 'No seats selected'}
         </p>
         <p className="booking-summary-count">{selectedSeatIds.length} ticket{selectedSeatIds.length === 1 ? '' : 's'}</p>
-        {showtime && (
-          <p className="booking-price">
-            {formatVnd(selectedSeatIds.length * showtime.price)}
-          </p>
-        )}
+        
+        <p className="booking-price">{formatVnd(selectedTotal)}</p>
+        
         {bookingError && <p className="error-text">{bookingError}</p>}
         <button
           onClick={handleConfirm}
