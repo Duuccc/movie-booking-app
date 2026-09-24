@@ -21,13 +21,13 @@ function Navbar() {
             {user.role === 'ADMIN' && (
               <Link to="/admin" className="navbar-link">Admin</Link>
             )}
-            <span className="navbar-user">{user.name} · {user.role}</span>
+            <span className="navbar-user">{user.name}</span>
             <button onClick={handleLogout} className="navbar-logout">Logout</button>
           </>
         ) : (
           <>
             <Link to="/login" className="navbar-link">Login</Link>
-            <Link to="/register" className="navbar-link">Register</Link>
+            <Link to="/register" className="navbar-link navbar-link-cta">Register</Link>
           </>
         )}
       </div>

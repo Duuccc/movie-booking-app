@@ -32,8 +32,6 @@ function CheckoutPage() {
       .getBooking(bookingId)
       .then((bookingData) => {
         setBooking(bookingData)
-        // Already paid? No reason to sit on a checkout page -- send them
-        // straight to the confirmation.
         if (bookingData.payment_status === 'PAID') {
           navigate(`/bookings/${bookingData.id}/confirmation`, { replace: true })
           return null
@@ -56,36 +54,31 @@ function CheckoutPage() {
     if (!booking?.expires_at) return
 
     function updateCountdown() {
-        const expiresAt = new Date(booking.expires_at).getTime()
-        const now = Date.now()
-
-        const remaining = Math.max(0, Math.ceil((expiresAt - now) / 1000))
-
-        setSecondsLeft(remaining)
+      const expiresAt = new Date(booking.expires_at).getTime()
+      const now = Date.now()
+      setSecondsLeft(Math.max(0, Math.ceil((expiresAt - now) / 1000)))
     }
 
     updateCountdown()
-
     const timer = setInterval(updateCountdown, 1000)
-
     return () => clearInterval(timer)
-    }, [booking])
+  }, [booking])
 
-    useEffect(() => {
-        if (secondsLeft !== 0) return
-        if(payingRef.current) return
+  useEffect(() => {
+    if (secondsLeft !== 0) return
+    if (payingRef.current) return
 
-        async function expireBooking() {
-            try {
-            await api.cancelBooking(Number(bookingId))
-            navigate('/bookings')
-            } catch (err) {
-            setPayError(err.message)
-            }
-        }
+    async function expireBooking() {
+      try {
+        await api.cancelBooking(Number(bookingId))
+        navigate('/bookings')
+      } catch (err) {
+        setPayError(err.message)
+      }
+    }
 
-        expireBooking()
-        }, [secondsLeft, bookingId, navigate])
+    expireBooking()
+  }, [secondsLeft, bookingId, navigate])
 
   async function handlePay() {
     setPayError('')
@@ -112,16 +105,20 @@ function CheckoutPage() {
 
   return (
     <div className="page-narrow">
-      <h1 className="page-title">Checkout</h1>
-      <p className="page-subtitle">Your seats are held. Complete payment to confirm.</p>
-        {secondsLeft !== null && (
-            <div className="checkout-timer">
-                Time remaining:{' '}
-                {Math.floor(secondsLeft / 60)}:
-                {String(secondsLeft % 60).padStart(2, '0')}
-            </div>
-            )}
-      <div className="card" style={{ padding: '1.5rem' }}>
+      <p className="movie-details-tag">Checkout</p>
+      <h1 className="checkout-title">Complete Payment</h1>
+      <p className="page-subtitle">Your seats are held. Pay to confirm.</p>
+
+      {secondsLeft !== null && (
+        <div className="checkout-timer">
+          <span className="checkout-timer-label">Time remaining</span>
+          <span className="checkout-timer-clock">
+            {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, '0')}
+          </span>
+        </div>
+      )}
+
+      <div className="card checkout-card">
         <dl className="confirmation-details" style={{ marginTop: 0 }}>
           <dt>Movie</dt>
           <dd>{movie?.title}</dd>
@@ -154,8 +151,6 @@ function CheckoutPage() {
           </div>
         </div>
 
-        {/* Mock-only control so the failure path is demonstrable.
-            A real gateway decides this itself; this checkbox would not exist. */}
         <label className="simulate-toggle">
           <input
             type="checkbox"
@@ -167,7 +162,11 @@ function CheckoutPage() {
 
         {payError && <p className="error-text">{payError}</p>}
 
-        <button onClick={handlePay} disabled={paying || secondsLeft === 0} className="btn btn-primary btn-block">
+        <button
+          onClick={handlePay}
+          disabled={paying || secondsLeft === 0}
+          className="btn btn-primary btn-block"
+        >
           {paying ? 'Processing...' : `Pay ${formatVnd(booking.total_amount)}`}
         </button>
 

@@ -94,7 +94,9 @@ function ShowtimesPage() {
     <>
       <div className="schedule-subheader">
         <div className="schedule-subheader-inner">
+          <label className="schedule-filter-label" htmlFor="theater-filter-all">Theater</label>
           <select
+            id="theater-filter-all"
             className="input theater-select"
             value={selectedTheaterId}
             onChange={(e) => updateParams({ theater_id: e.target.value })}
@@ -110,6 +112,8 @@ function ShowtimesPage() {
       </div>
 
       <div className="page">
+        <h1 className="showtimes-select-title">Showtimes</h1>
+
         <div className="date-tabs">
           {DATES.map((d) => (
             <button
@@ -133,23 +137,22 @@ function ShowtimesPage() {
 
         <div className="showtime-list">
           {movieGroups.map(({ movie, showtimes: movieShowtimes }) => (
-            <div key={movie.id} className="card showtime-movie-card">
+            <div key={movie.id} className="showtime-movie-row">
               <Link to={`/movies/${movie.id}`} className="showtime-movie-poster">
                 <PosterImage posterUrl={movie.poster_url} title={movie.title} style={{ width: '100%', height: '100%' }} />
               </Link>
               <div className="showtime-movie-info">
+                <p className="movie-details-tag">{movie.genre}</p>
                 <Link to={`/movies/${movie.id}`} className="showtime-movie-title-link">
                   <h3 className="showtime-movie-title">{movie.title}</h3>
                 </Link>
-                <p className="showtime-movie-meta">
-                  {movie.genre} · {movie.duration} min
-                </p>
+                <p className="showtime-movie-meta">{movie.duration} min</p>
                 <div className="time-row">
                   {movieShowtimes.map((s) => (
                     <Link key={s.id} to={`/showtimes/${s.id}/seats`} className="time-btn">
-                      <span>{formatTime(s.start_time)}</span>
+                      <span className="time-btn-time">{formatTime(s.start_time)}</span>
                       {availability[s.id] !== undefined && (
-                        <span className="time-btn-seats">{availability[s.id]} seats left</span>
+                        <span className="time-btn-seats">{availability[s.id]} left</span>
                       )}
                     </Link>
                   ))}

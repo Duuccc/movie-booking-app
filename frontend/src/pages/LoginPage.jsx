@@ -32,7 +32,8 @@ function LoginPage() {
 
   return (
     <div className="page-narrow">
-      <h1 className="page-title">Log In</h1>
+      <p className="movie-details-tag" style={{ textAlign: 'center' }}>Welcome back</p>
+      <h1 className="auth-title">Log In</h1>
       <div className="form-card">
         <form onSubmit={handleSubmit}>
           <div className="field">

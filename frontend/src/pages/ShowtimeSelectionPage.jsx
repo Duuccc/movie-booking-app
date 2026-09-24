@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { api, getUpcomingDates } from '../services/api'
+import PosterImage from '../components/PosterImage'
 
 const DATES = getUpcomingDates(7)
 
@@ -30,7 +31,7 @@ function ShowtimeSelectionPage() {
         })
         return next
       },
-      { replace: true } // filter changes shouldn't each get their own back-button stop
+      { replace: true }
     )
   }
 
@@ -89,61 +90,78 @@ function ShowtimeSelectionPage() {
 
   if (error) return <p className="status-message error">{error}</p>
 
-  return (
-    <div className="page-medium">
+    return (
+    <div className="page">
       <button onClick={() => navigate(-1)} className="back-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
         &larr; Back to {movie?.title || 'movie'}
       </button>
-      <h1 className="page-title">Showtimes</h1>
-      <p className="page-subtitle">{movie?.title}</p>
 
-      <div className="field" style={{ maxWidth: 260 }}>
-        <select
-          className="input theater-select"
-          value={selectedTheaterId}
-          onChange={(e) => updateParams({ theater_id: e.target.value })}
-        >
-          <option value="">All theaters</option>
-          {theaters.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
+      <div className="showtime-select-header">
+        <PosterImage
+          posterUrl={movie?.poster_url}
+          title={movie?.title}
+          className="showtime-select-poster"
+        />
+        <div className="showtime-select-info">
+          <p className="movie-details-tag">{movie?.genre}</p>
+          <h1 className="showtimes-select-title">{movie?.title}</h1>
+          {movie?.description && (
+            <p className="showtime-select-description">{movie.description}</p>
+          )}
+        </div>
       </div>
 
-      <div className="date-tabs">
-        {DATES.map((d) => (
-          <button
-            key={d.key}
-            type="button"
-            onClick={() => updateParams({ date: d.key === DATES[0].key ? null : d.key })}
-            className={'date-tab' + (selectedDate === d.key ? ' date-tab-active' : '')}
+      <div className="showtime-select-schedule">
+        <div className="schedule-filter-bar">
+          <label className="schedule-filter-label" htmlFor="theater-filter">Theater</label>
+          <select
+            id="theater-filter"
+            className="input theater-select"
+            value={selectedTheaterId}
+            onChange={(e) => updateParams({ theater_id: e.target.value })}
           >
-            <span className="date-tab-day">{d.dayNum}</span>
-            <span className="date-tab-weekday">{d.weekday}</span>
-          </button>
-        ))}
-      </div>
+            <option value="">All theaters</option>
+            {theaters.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      {loading && <p className="status-message">Loading showtimes...</p>}
-
-      {!loading && visibleShowtimes.length === 0 && (
-        <p className="status-message">No showtimes for this date.</p>
-      )}
-
-      {!loading && visibleShowtimes.length > 0 && (
-        <div className="time-row">
-          {visibleShowtimes.map((showtime) => (
-            <Link key={showtime.id} to={`/showtimes/${showtime.id}/seats`} className="time-btn">
-              <span>{formatTime(showtime.start_time)}</span>
-              {availability[showtime.id] !== undefined && (
-                <span className="time-btn-seats">{availability[showtime.id]} seats left</span>
-              )}
-            </Link>
+        <div className="date-tabs">
+          {DATES.map((d) => (
+            <button
+              key={d.key}
+              type="button"
+              onClick={() => updateParams({ date: d.key === DATES[0].key ? null : d.key })}
+              className={'date-tab' + (selectedDate === d.key ? ' date-tab-active' : '')}
+            >
+              <span className="date-tab-day">{d.dayNum}</span>
+              <span className="date-tab-weekday">{d.weekday}</span>
+            </button>
           ))}
         </div>
-      )}
+
+        {loading && <p className="status-message">Loading showtimes...</p>}
+
+        {!loading && visibleShowtimes.length === 0 && (
+          <p className="status-message">No showtimes for this date.</p>
+        )}
+
+        {!loading && visibleShowtimes.length > 0 && (
+          <div className="time-row">
+            {visibleShowtimes.map((showtime) => (
+              <Link key={showtime.id} to={`/showtimes/${showtime.id}/seats`} className="time-btn">
+                <span className="time-btn-time">{formatTime(showtime.start_time)}</span>
+                {availability[showtime.id] !== undefined && (
+                  <span className="time-btn-seats">{availability[showtime.id]} left</span>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

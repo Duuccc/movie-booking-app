@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate, useLocation, Link , Navigate} from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { api, formatVnd } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 
@@ -106,13 +106,16 @@ function SeatSelectionPage() {
 
   return (
     <div className="page-medium">
-      {/* <Link to={`/movies/${showtime?.movie_id}/showtimes`} className="back-link">&larr; Back to showtimes</Link> */}
       <button onClick={() => navigate(-1)} className="back-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
         &larr; Back to showtimes
       </button>
-      <h1 style={{ marginBottom: '0.15rem' }}>{movie?.title}</h1>
-      <p style={{ color: 'var(--muted)' }}>
-        {theater?.name} · {showtime && new Date(showtime.start_time).toLocaleString()}
+
+      <p className="movie-details-tag">{theater?.name}</p>
+      <h1 className="showtimes-select-title" style={{ marginBottom: '0.2rem' }}>{movie?.title}</h1>
+      <p className="seat-page-subtitle">
+        {showtime && new Date(showtime.start_time).toLocaleString([], {
+          weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+        })}
       </p>
 
       <div className="screen-bar">
@@ -149,14 +152,16 @@ function SeatSelectionPage() {
       </div>
 
       <div className="seat-legend">
-        <span><span className="seat-legend-swatch" style={{ background: 'var(--paper)' }} /> Available</span>
-        <span><span className="seat-legend-swatch" style={{ background: 'var(--accent)', borderColor: 'var(--accent-dark)' }} /> Selected</span>
-        <span><span className="seat-legend-swatch" style={{ background: 'var(--border)' }} /> Booked</span>
+        <span><span className="seat-legend-swatch seat-legend-swatch-available" /> Available</span>
+        <span><span className="seat-legend-swatch seat-legend-swatch-selected" /> Selected</span>
+        <span><span className="seat-legend-swatch seat-legend-swatch-booked" /> Booked</span>
       </div>
 
       <div className="booking-summary">
-        <p>Selected seats: {selectedSeatNumbers.length ? selectedSeatNumbers.join(', ') : 'None'}</p>
-        <p>Number of tickets: {selectedSeatIds.length}</p>
+        <p className="booking-summary-seats">
+          {selectedSeatNumbers.length ? selectedSeatNumbers.join(', ') : 'No seats selected'}
+        </p>
+        <p className="booking-summary-count">{selectedSeatIds.length} ticket{selectedSeatIds.length === 1 ? '' : 's'}</p>
         {showtime && (
           <p className="booking-price">
             {formatVnd(selectedSeatIds.length * showtime.price)}
@@ -176,3 +181,4 @@ function SeatSelectionPage() {
 }
 
 export default SeatSelectionPage
+

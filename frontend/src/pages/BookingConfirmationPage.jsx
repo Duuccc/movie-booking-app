@@ -38,14 +38,14 @@ function BookingConfirmationPage() {
   if (!booking) return null
 
   const seatNumbers = booking.seats.map((s) => s.seat_number).sort().join(', ')
-  const total = showtime ? formatVnd(booking.total_seats * showtime.price) : null
 
   return (
     <div className="page-narrow">
       <div className="card confirmation-card">
         <div className="confirmation-check">&#10003;</div>
-        <h1 style={{ marginBottom: '0.2rem' }}>Booking Confirmed</h1>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <p className="movie-details-tag">Booking Confirmed</p>
+        <h1 className="confirmation-title">{movie?.title}</h1>
+        <div className="confirmation-badges">
           <span className="badge badge-success">{booking.status}</span>
           <span className={`badge ${booking.payment_status === 'PAID' ? 'badge-success' : 'badge-muted'}`}>
             {booking.payment_status}
@@ -53,8 +53,6 @@ function BookingConfirmationPage() {
         </div>
 
         <dl className="confirmation-details">
-          <dt>Movie</dt>
-          <dd>{movie?.title}</dd>
           <dt>Theater</dt>
           <dd>{theater?.name}</dd>
           <dt>Showtime</dt>
@@ -62,14 +60,14 @@ function BookingConfirmationPage() {
           <dt>Seats</dt>
           <dd>{seatNumbers}</dd>
           <dt>Total</dt>
-          <dd>{total || '—'}</dd>
+          <dd>{formatVnd(booking.total_amount)}</dd>
           <dt>Booking ID</dt>
           <dd>#{booking.id}</dd>
         </dl>
 
         <div className="confirmation-actions">
-          <Link to="/bookings">View My Bookings</Link>
-          <Link to="/">Browse More Movies</Link>
+          <Link to="/bookings" className="link-btn">View My Bookings</Link>
+          <Link to="/" className="link-btn">Browse More Movies</Link>
         </div>
       </div>
     </div>

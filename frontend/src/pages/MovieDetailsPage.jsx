@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { api, resolveYoutubeEmbedUrl } from '../services/api'
 import PosterImage from '../components/PosterImage'
 
@@ -37,20 +37,21 @@ function MovieDetailsPage() {
           className="movie-details-poster"
         />
         <div className="movie-details-info">
+          <p className="movie-details-tag">{movie.genre}</p>
           <h1 className="movie-details-title">{movie.title}</h1>
           <p className="movie-details-meta">
-            {movie.genre} · {movie.duration} min · {movie.release_date}
+            {movie.duration} min &middot; {movie.release_date}
           </p>
           <p className="movie-details-description">{movie.description}</p>
-          <Link to={`/movies/${movieId}/showtimes`} className="btn btn-primary">
+          <button onClick={() => navigate(`/movies/${movieId}/showtimes`)} className="btn btn-primary">
             View Showtimes
-          </Link>
+          </button>
         </div>
       </div>
 
       {embedUrl && (
         <div className="movie-details-trailer">
-          <h3>Trailer</h3>
+          <h3 className="movie-details-trailer-label">Trailer</h3>
           <div className="trailer-frame">
             <iframe
               src={embedUrl}
