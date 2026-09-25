@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from app.models.showtime import Showtime
+from app.models.showtime import Showtime, ShowtimeFormat
 from app.models.seat import Seat, SeatType
 from app.models.booking import Booking, BookingStatus, PaymentStatus
 from app.models.booking_seat import BookingSeat
@@ -23,9 +23,18 @@ SEAT_TYPE_SURCHARGE = {
     SeatType.COUPLE: 35000
 }
 
-def get_seat_price(base_price: int, seat_type: SeatType) -> int: 
-    return base_price + SEAT_TYPE_SURCHARGE.get(seat_type, 0)
+FORMAT_SURCHARGE = {
+    ShowtimeFormat.TWO_D: 0,
+    ShowtimeFormat.THREE_D: 25000,
+    ShowtimeFormat.IMAX: 50000,
+}
 
+def get_seat_price(base_price: int, seat_type: SeatType, showtime_format: ShowtimeFormat) -> int:
+    return (
+        base_price
+        + SEAT_TYPE_SURCHARGE.get(seat_type, 0)
+        + FORMAT_SURCHARGE.get(showtime_format, 0)
+    )
 
 def serialize_booking(booking: Booking) -> BookingOut:
     """
@@ -102,7 +111,7 @@ def create_booking(db: Session, user_id: int, showtime_id: int, seat_ids: List[i
         total_seats=len(seat_ids),
         # Snapshot the price now. If an admin edits the showtime price
         # later, this customer still owes what they agreed to.
-        total_amount=sum(get_seat_price(showtime.price, seat.seat_type) for seat in seats),
+        total_amount=sum(get_seat_price(showtime.price, seat.seat_type, showtime.format) for seat in seats),
         expires_at= datetime.now(timezone.utc) + timedelta(minutes=15)
     )
     db.add(booking)

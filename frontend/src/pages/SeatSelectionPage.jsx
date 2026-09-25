@@ -9,6 +9,12 @@ function parseSeat(seatNumber) {
   return { row: match[1], number: Number(match[2]) }
 }
 
+function getFormatModifier(format) {
+  if (format === '3D') return '3d'
+  if (format === 'IMAX') return 'imax'
+  return null
+}
+
 function SeatSelectionPage() {
   const { showtimeId } = useParams()
   const navigate = useNavigate()
@@ -118,14 +124,20 @@ function SeatSelectionPage() {
         {showtime && new Date(showtime.start_time).toLocaleString([], {
           weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
         })}
+        {showtime?.format && showtime.format !== "2D" && (
+          <span className='format-badge'>{showtime.format}</span>
+        )}
       </p>
 
-      <div className="screen-bar">
+
+      <div className={['screen-bar', getFormatModifier(showtime?.format) && `screen-bar-${getFormatModifier(showtime?.format)}`].filter(Boolean).join(' ')}>
         <div className="screen-curve" />
-        <span className="screen-label">SCREEN</span>
+        <span className="screen-label">
+          SCREEN{showtime?.format && showtime.format !== '2D' ? ` · ${showtime.format}` : ''}
+        </span>
       </div>
 
-      <div className="seat-grid">
+      <div className={['seat-grid', getFormatModifier(showtime?.format) && `seat-grid-${getFormatModifier(showtime?.format)}`].filter(Boolean).join(' ')}>
         {rowLetters.map((row) => (
           <div key={row} className="seat-row">
             <span className="seat-row-label">{row}</span>

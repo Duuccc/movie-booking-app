@@ -41,11 +41,11 @@ function BookingConfirmationPage() {
 
   return (
     <div className="page-narrow">
-      <div className="card confirmation-card">
-        <div className="confirmation-check">&#10003;</div>
+      <div className="card confirmation-card" id="ticket">
+        <div className="confirmation-check no-print">&#10003;</div>
         <p className="movie-details-tag">Booking Confirmed</p>
         <h1 className="confirmation-title">{movie?.title}</h1>
-        <div className="confirmation-badges">
+        <div className="confirmation-badges no-print">
           <span className="badge badge-success">{booking.status}</span>
           <span className={`badge ${booking.payment_status === 'PAID' ? 'badge-success' : 'badge-muted'}`}>
             {booking.payment_status}
@@ -65,10 +65,16 @@ function BookingConfirmationPage() {
           <dd>#{booking.id}</dd>
         </dl>
 
-        <div className="confirmation-actions">
+        <div className="ticket-barcode">#{String(booking.id).padStart(8, '0')}</div>
+
+        <div className="confirmation-actions no-print">
           <Link to="/bookings" className="link-btn">View My Bookings</Link>
           <Link to="/" className="link-btn">Browse More Movies</Link>
         </div>
+
+        <button onClick={() => window.print()} className="btn btn-ghost btn-block no-print" style={{ marginTop: '1.25rem' }}>
+          Print Ticket
+        </button>
       </div>
     </div>
   )

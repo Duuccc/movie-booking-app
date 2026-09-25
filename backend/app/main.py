@@ -17,6 +17,7 @@ from app.routers import theaters as theaters_router
 from app.routers import showtimes as showtimes_router
 from app.routers import bookings as bookings_router
 from app.routers import admin as admin_router
+from app.routers import analytics
 
 from pathlib import Path
 
@@ -45,6 +46,7 @@ app.include_router(theaters_router.router)
 app.include_router(showtimes_router.router)
 app.include_router(bookings_router.router)
 app.include_router(admin_router.router)
+app.include_router(analytics.router)
 
 @app.get("/")
 def root():

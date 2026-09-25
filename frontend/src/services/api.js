@@ -173,4 +173,6 @@ export const api = {
     showtimeIds.forEach((id) => params.append('showtime_id', id))
     return request(`/showtimes/availability?${params.toString()}`)
   },
+
+  getAdminAnalytics: () => request("/admin/analytics", {"auth": true})
 }

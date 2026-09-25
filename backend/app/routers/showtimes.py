@@ -182,7 +182,7 @@ def get_showtime_seats(showtime_id: int, db: Session = Depends(get_db)):
             seat_id=seat.id,
             seat_number=f"{seat.row}{seat.seat_number}",
             seat_type=seat.seat_type.value,
-            price=get_seat_price(showtime.price, seat.seat_type),
+            price=get_seat_price(showtime.price, seat.seat_type, showtime.format),
             status="BOOKED" if seat.id in booked_seat_ids else "AVAILABLE",
         )
         for seat in seats

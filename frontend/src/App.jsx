@@ -18,6 +18,7 @@ import AdminTheatersPage from './pages/AdminTheatersPage'
 import AdminShowtimesPage from './pages/AdminShowtimesPage'
 import AdminBookingsPage from './pages/AdminBookingsPage'
 import ShowtimesPage from './pages/ShowtimesPage'
+import AdminAnalyticsPage from './pages/AdminAnalyticsPage'
 
 function App() {
   return (
@@ -95,6 +96,14 @@ function App() {
             element={
               <AdminRoute>
                 <AdminBookingsPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/analytics"
+            element={
+              <AdminRoute>
+                <AdminAnalyticsPage />
               </AdminRoute>
             }
           />

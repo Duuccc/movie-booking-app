@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, formatVnd } from '../services/api'
 
-const emptyForm = { movie_id: '', theater_id: '', start_time: '', price: '75000' }
+const emptyForm = { movie_id: '', theater_id: '', start_time: '', price: '75000', format: "2D" }
 
 function AdminShowtimesPage() {
   const [showtimes, setShowtimes] = useState([])
@@ -36,6 +36,7 @@ function AdminShowtimesPage() {
       theater_id: showtime.theater_id,
       start_time: showtime.start_time.slice(0, 16),
       price: showtime.price,
+      format: showtime.format
     })
   }
 
@@ -53,6 +54,7 @@ function AdminShowtimesPage() {
       theater_id: Number(form.theater_id),
       start_time: new Date(form.start_time).toISOString(),
       price: Number(form.price),
+      format: form.format
     }
     try {
       if (editingId) {
@@ -138,6 +140,19 @@ function AdminShowtimesPage() {
             required
           />
         </div>
+        <div className="field">
+          <label>Format</label>
+          <select
+            className="input"
+            value={form.format}
+            onChange={(e) => setForm({ ...form, format: e.target.value })}
+            required
+          >
+            <option value="2D">2D</option>
+            <option value="3D">3D</option>
+            <option value="IMAX">IMAX</option>
+          </select>
+        </div>
         {error && <p className="error-text">{error}</p>}
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button type="submit" disabled={submitting} className="btn btn-primary">
@@ -162,6 +177,7 @@ function AdminShowtimesPage() {
                 <th>Theater</th>
                 <th>Time</th>
                 <th>Price</th>
+                <th>Format</th>
                 <th></th>
               </tr>
             </thead>
@@ -172,6 +188,7 @@ function AdminShowtimesPage() {
                   <td>{theaterNameById[showtime.theater_id]}</td>
                   <td>{new Date(showtime.start_time).toLocaleString()}</td>
                   <td>{formatVnd(showtime.price)}</td>
+                  <td>{showtime.format}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>
                     <button onClick={() => startEdit(showtime)} className="link-btn" style={{ marginRight: '0.75rem' }}>Edit</button>
                     <button onClick={() => handleDelete(showtime.id)} className="link-btn danger">Delete</button>

@@ -157,6 +157,7 @@ function ShowtimeSelectionPage() {
             {visibleShowtimes.map((showtime) => (
               <Link key={showtime.id} to={`/showtimes/${showtime.id}/seats`} className="time-btn">
                 <span className="time-btn-time">{formatTime(showtime.start_time)}</span>
+                {showtime.format !== '2D' && <span className="time-btn-format">{showtime.format}</span>}
                 {availability[showtime.id] !== undefined && (
                   <span className="time-btn-seats">{availability[showtime.id]} left</span>
                 )}

@@ -1,7 +1,13 @@
-from sqlalchemy import Column, Integer, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, Enum
 from sqlalchemy.orm import relationship
+import enum
 
 from app.database import Base
+
+class ShowtimeFormat(str, enum.Enum):
+    TWO_D = "2D"
+    THREE_D = "3D"
+    IMAX = "IMAX"
 
 
 class Showtime(Base):
@@ -18,6 +24,7 @@ class Showtime(Base):
     # Whole VND (dong) -- no fractional unit in practical use, unlike
     # USD cents, so this is a plain Integer rather than Numeric(x, 2).
     price = Column(Integer, nullable=False, default=75000)
+    format = Column(Enum(ShowtimeFormat, values_callable=lambda obj: [e.value for e in obj]), nullable=False, default=ShowtimeFormat.TWO_D)
 
     movie = relationship("Movie", back_populates="showtimes")
     theater = relationship("Theater", back_populates="showtimes")

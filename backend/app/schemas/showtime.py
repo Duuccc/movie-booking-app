@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
+from app.models.showtime import ShowtimeFormat
 
 
 class ShowtimeBase(BaseModel):
@@ -9,6 +10,7 @@ class ShowtimeBase(BaseModel):
     theater_id: int
     start_time: datetime
     price: int = 75000  # whole VND -- see models/showtime.py for why this isn't Decimal
+    format: ShowtimeFormat = ShowtimeFormat.TWO_D
 
 
 class ShowtimeCreate(ShowtimeBase):
@@ -20,6 +22,7 @@ class ShowtimeUpdate(BaseModel):
     theater_id: Optional[int] = None
     start_time: Optional[datetime] = None
     price: Optional[int] = None
+    format: Optional[ShowtimeFormat] = None
 
 
 class ShowtimeOut(ShowtimeBase):
