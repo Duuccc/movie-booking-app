@@ -13,6 +13,23 @@ function formatTime(isoString) {
   })
 }
 
+const FORMAT_ORDER = ['2D', '3D', 'IMAX']
+
+function groupByFormat(showtimes) {
+  const groups = {}
+  for (const s of showtimes) {
+    const fmt = s.format || '2D'
+    if (!groups[fmt]) groups[fmt] = []
+    groups[fmt].push(s)
+  }
+  // Sắp theo thứ tự cố định 2D → 3D → IMAX, format nào không nằm trong
+  // FORMAT_ORDER (không nên xảy ra, nhưng để an toàn) thì xếp cuối.
+  return FORMAT_ORDER.filter((fmt) => groups[fmt]?.length > 0).map((fmt) => ({
+    format: fmt,
+    showtimes: groups[fmt],
+  }))
+}
+
 function ShowtimesPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedDate = searchParams.get('date') || DATES[0].key
@@ -148,15 +165,21 @@ function ShowtimesPage() {
                 <p className="movie-details-tag">{movie.genre}</p>
 
                 <p className="showtime-movie-meta">{movie.duration} min</p>
-                <div className="time-row">
-                  {movieShowtimes.map((s) => (
-                    <Link key={s.id} to={`/showtimes/${s.id}/seats`} className="time-btn">
-                      <span className="time-btn-time">{formatTime(s.start_time)}</span>
-                      {s.format !== "2D" && <span className='time-btn-format'>{s.format}</span>}
-                      {availability[s.id] !== undefined && (
-                        <span className="time-btn-seats">{availability[s.id]} left</span>
-                      )}
-                    </Link>
+                <div className="format-sections">
+                  {groupByFormat(movieShowtimes).map(({ format, showtimes: formatShowtimes }) => (
+                    <div key={format} className="format-section">
+                      <p className="format-section-label">{format}</p>
+                      <div className="time-row">
+                        {formatShowtimes.map((s) => (
+                          <Link key={s.id} to={`/showtimes/${s.id}/seats`} className="time-btn">
+                            <span className="time-btn-time">{formatTime(s.start_time)}</span>
+                            {availability[s.id] !== undefined && (
+                              <span className="time-btn-seats">{availability[s.id]} left</span>
+                            )}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
