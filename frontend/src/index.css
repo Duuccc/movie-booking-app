@@ -1278,7 +1278,7 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   margin: 1.5rem 0 2.5rem;
 }
 .showtime-select-poster {
-  width: 316px;
+  width: 320px;
   aspect-ratio: 2 / 3;
   border-radius: 4px;
   flex-shrink: 0;
@@ -1435,7 +1435,7 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   color: var(--gold);
 }
 .seat-grid-imax {
-  background: var(--ink);
+  background: rgba(20, 18, 14, 0.562);
   border-radius: var(--radius);
   padding: 2rem 1rem;
 }
@@ -1446,8 +1446,8 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   border-color: rgba(255, 255, 255, 0.25);
 }
 .seat-grid-imax .seat:not(.seat-booked):not(.seat-selected):not(.seat-vip):not(.seat-couple) {
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  background: rgb(245, 242, 242);
+  color: #050505;
 }
 
 /* 2D -- baseline, giữ nguyên như cũ */
