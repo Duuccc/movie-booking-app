@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { api, isValidYoutubeUrl } from '../services/api'
 import PosterImage from '../components/PosterImage'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 
 const emptyForm = { title: '', description: '', duration: '', genre: '', release_date: '', poster_url: '', trailer_url: '' }
 
 const ALLOWED_POSTER_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-const MAX_POSTER_BYTES = 5 * 1024 * 1024 // mirrors the backend's 5 MB limit
+const MAX_POSTER_BYTES = 5 * 1024 * 1024
 
 function AdminMoviesPage() {
   const [movies, setMovies] = useState([])
@@ -19,6 +21,7 @@ function AdminMoviesPage() {
   const [posterFile, setPosterFile] = useState(null)
   const [posterPreview, setPosterPreview] = useState(null)
   const fileInputRef = useRef(null)
+  const {pageItems, paginationProps} = usePagination(movies)
 
   useEffect(() => {
     loadMovies()
@@ -271,39 +274,42 @@ function AdminMoviesPage() {
       {loading ? (
         <p className="status-message">Loading movies...</p>
       ) : (
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th></th>
-                <th>Title</th>
-                <th>Genre</th>
-                <th>Duration</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {movies.map((movie) => (
-                <tr key={movie.id}>
-                  <td>
-                    <PosterImage
-                      posterUrl={movie.poster_url}
-                      title={movie.title}
-                      style={{ width: '40px', height: '60px', borderRadius: '5px' }}
-                    />
-                  </td>
-                  <td>{movie.title}</td>
-                  <td>{movie.genre}</td>
-                  <td>{movie.duration} min</td>
-                  <td style={{ whiteSpace: 'nowrap' }}>
-                    <button onClick={() => startEdit(movie)} className="link-btn" style={{ marginRight: '0.75rem' }}>Edit</button>
-                    <button onClick={() => handleDelete(movie.id)} className="link-btn danger">Delete</button>
-                  </td>
+        <>
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Title</th>
+                  <th>Genre</th>
+                  <th>Duration</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {pageItems.map((movie) => (
+                  <tr key={movie.id}>
+                    <td>
+                      <PosterImage
+                        posterUrl={movie.poster_url}
+                        title={movie.title}
+                        style={{ width: '40px', height: '60px', borderRadius: '5px' }}
+                      />
+                    </td>
+                    <td>{movie.title}</td>
+                    <td>{movie.genre}</td>
+                    <td>{movie.duration} min</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <button onClick={() => startEdit(movie)} className="link-btn" style={{ marginRight: '0.75rem' }}>Edit</button>
+                      <button onClick={() => handleDelete(movie.id)} className="link-btn danger">Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination {...paginationProps}></Pagination>
+        </>
       )}
     </div>
   )

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../services/api'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 
 const emptyForm = { name: '', location: '' }
 
@@ -10,6 +12,7 @@ function AdminTheatersPage() {
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const { pageItems, paginationProps } = usePagination(theaters)
 
   useEffect(() => {
     loadTheaters()
@@ -103,29 +106,32 @@ function AdminTheatersPage() {
       {loading ? (
         <p className="status-message">Loading theaters...</p>
       ) : (
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Location</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {theaters.map((theater) => (
-                <tr key={theater.id}>
-                  <td>{theater.name}</td>
-                  <td>{theater.location}</td>
-                  <td style={{ whiteSpace: 'nowrap' }}>
-                    <button onClick={() => startEdit(theater)} className="link-btn" style={{ marginRight: '0.75rem' }}>Edit</button>
-                    <button onClick={() => handleDelete(theater.id)} className="link-btn danger">Delete</button>
-                  </td>
+        <>
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Location</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {pageItems.map((theater) => (
+                  <tr key={theater.id}>
+                    <td>{theater.name}</td>
+                    <td>{theater.location}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <button onClick={() => startEdit(theater)} className="link-btn" style={{ marginRight: '0.75rem' }}>Edit</button>
+                      <button onClick={() => handleDelete(theater.id)} className="link-btn danger">Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination {...paginationProps}></Pagination>
+        </>
       )}
     </div>
   )

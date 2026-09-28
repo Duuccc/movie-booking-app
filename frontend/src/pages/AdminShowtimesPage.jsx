@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, formatVnd } from '../services/api'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 
 const emptyForm = { movie_id: '', theater_id: '', start_time: '', price: '75000', format: "2D" }
 
@@ -12,6 +14,7 @@ function AdminShowtimesPage() {
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const { pageItems, paginationProps } = usePagination(showtimes)
 
   useEffect(() => {
     loadAll()
@@ -169,35 +172,38 @@ function AdminShowtimesPage() {
       {loading ? (
         <p className="status-message">Loading showtimes...</p>
       ) : (
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Movie</th>
-                <th>Theater</th>
-                <th>Time</th>
-                <th>Price</th>
-                <th>Format</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {showtimes.map((showtime) => (
-                <tr key={showtime.id}>
-                  <td>{movieTitleById[showtime.movie_id]}</td>
-                  <td>{theaterNameById[showtime.theater_id]}</td>
-                  <td>{new Date(showtime.start_time).toLocaleString()}</td>
-                  <td>{formatVnd(showtime.price)}</td>
-                  <td>{showtime.format}</td>
-                  <td style={{ whiteSpace: 'nowrap' }}>
-                    <button onClick={() => startEdit(showtime)} className="link-btn" style={{ marginRight: '0.75rem' }}>Edit</button>
-                    <button onClick={() => handleDelete(showtime.id)} className="link-btn danger">Delete</button>
-                  </td>
+        <>
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Movie</th>
+                  <th>Theater</th>
+                  <th>Time</th>
+                  <th>Price</th>
+                  <th>Format</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {pageItems.map((showtime) => (
+                  <tr key={showtime.id}>
+                    <td>{movieTitleById[showtime.movie_id]}</td>
+                    <td>{theaterNameById[showtime.theater_id]}</td>
+                    <td>{new Date(showtime.start_time).toLocaleString()}</td>
+                    <td>{formatVnd(showtime.price)}</td>
+                    <td>{showtime.format}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <button onClick={() => startEdit(showtime)} className="link-btn" style={{ marginRight: '0.75rem' }}>Edit</button>
+                      <button onClick={() => handleDelete(showtime.id)} className="link-btn danger">Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination {...paginationProps} />
+        </>
       )}
     </div>
   )
