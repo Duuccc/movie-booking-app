@@ -27,9 +27,6 @@ class Payment(Base):
     history is what you reconcile against the gateway's own records when
     something goes wrong.
 
-    NOTE: this is a MOCK. No money moves, no gateway is contacted. See
-    app/services/payment_service.py for where a real integration would
-    slot in.
     """
 
     __tablename__ = "payments"
@@ -43,7 +40,7 @@ class Payment(Base):
     # What a gateway would hand back as its transaction id. Unique so a
     # duplicate submission can't create two identical payment records.
     reference = Column(String, unique=True, nullable=False, index=True)
-    succeeded = Column(Integer, nullable=False, default=0)  # 0/1, kept simple
+    succeeded = Column(Integer, nullable=False, default=0) 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     booking = relationship("Booking", back_populates="payments")
