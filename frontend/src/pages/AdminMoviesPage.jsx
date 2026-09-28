@@ -4,6 +4,9 @@ import PosterImage from '../components/PosterImage'
 
 const emptyForm = { title: '', description: '', duration: '', genre: '', release_date: '', poster_url: '', trailer_url: '' }
 
+const ALLOWED_POSTER_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const MAX_POSTER_BYTES = 5 * 1024 * 1024 // mirrors the backend's 5 MB limit
+
 function AdminMoviesPage() {
   const [movies, setMovies] = useState([])
   const [loading, setLoading] = useState(true)
@@ -11,20 +14,27 @@ function AdminMoviesPage() {
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
-  // Which movie's "Upload Poster" button was clicked -- the hidden file
-  // input below is shared across every row, so we track which row it's
-  // currently acting on rather than rendering one input per row.
-  const [uploadingForId, setUploadingForId] = useState(null)
+  // The chosen poster file is only held here until the form is submitted;
+  // the movie is saved first (it needs an id), then the file is uploaded.
+  const [posterFile, setPosterFile] = useState(null)
+  const [posterPreview, setPosterPreview] = useState(null)
   const fileInputRef = useRef(null)
-  // Tracks whether the file input's onChange actually fired (a file was
-  // chosen), so the window-focus-based cancel detection below (see
-  // triggerPosterUpload) knows whether to leave uploadingForId alone or
-  // reset it.
-  const fileWasSelectedRef = useRef(false)
 
   useEffect(() => {
     loadMovies()
   }, [])
+
+  // Local preview of the chosen file. The object URL must be revoked when
+  // the file changes or the page unmounts, or the browser keeps it in memory.
+  useEffect(() => {
+    if (!posterFile) {
+      setPosterPreview(null)
+      return
+    }
+    const url = URL.createObjectURL(posterFile)
+    setPosterPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [posterFile])
 
   function loadMovies() {
     setLoading(true)
@@ -37,6 +47,7 @@ function AdminMoviesPage() {
 
   function startEdit(movie) {
     setEditingId(movie.id)
+    setPosterFile(null)
     setForm({
       title: movie.title,
       description: movie.description || '',
@@ -51,6 +62,24 @@ function AdminMoviesPage() {
   function cancelEdit() {
     setEditingId(null)
     setForm(emptyForm)
+    setPosterFile(null)
+  }
+
+  function handlePosterFileChange(event) {
+    const file = event.target.files[0]
+    event.target.value = '' // so picking the same file again still fires onChange
+    if (!file) return
+
+    if (!ALLOWED_POSTER_TYPES.includes(file.type)) {
+      setError('Poster must be a JPEG, PNG or WEBP image.')
+      return
+    }
+    if (file.size > MAX_POSTER_BYTES) {
+      setError('Poster must be 5 MB or smaller.')
+      return
+    }
+    setError('')
+    setPosterFile(file)
   }
 
   async function handleSubmit(event) {
@@ -61,23 +90,44 @@ function AdminMoviesPage() {
       setError('Trailer URL must be a valid YouTube link (e.g. youtube.com/watch?v=... or youtu.be/...)')
       return
     }
-    
+
     setSubmitting(true)
     const payload = {
       ...form,
       duration: Number(form.duration),
       release_date: form.release_date || null,
     }
+
     try {
-      if (editingId) {
-        await api.updateMovie(editingId, payload)
-      } else {
-        await api.createMovie(payload)
+      // Step 1: save the movie itself (JSON). Both endpoints return the
+      // saved movie, which is where a brand-new movie's id comes from.
+      let savedMovie
+      try {
+        savedMovie = editingId
+          ? await api.updateMovie(editingId, payload)
+          : await api.createMovie(payload)
+      } catch (err) {
+        setError(err.message)
+        return
       }
+
+      // Step 2: upload the poster against that id, if one was chosen.
+      if (posterFile) {
+        try {
+          await api.uploadMoviePoster(savedMovie.id, posterFile)
+        } catch (err) {
+          // The movie IS saved at this point. Switch the form into edit mode
+          // for it, so pressing Save again retries the upload instead of
+          // creating a duplicate movie.
+          setEditingId(savedMovie.id)
+          setError(`Movie saved, but the poster upload failed: ${err.message}. Press Save Changes to retry.`)
+          loadMovies()
+          return
+        }
+      }
+
       cancelEdit()
       loadMovies()
-    } catch (err) {
-      setError(err.message)
     } finally {
       setSubmitting(false)
     }
@@ -90,50 +140,6 @@ function AdminMoviesPage() {
       loadMovies()
     } catch (err) {
       setError(err.message)
-    }
-  }
-
-  function triggerPosterUpload(movieId) {
-    fileWasSelectedRef.current = false
-    setUploadingForId(movieId)
-    fileInputRef.current.value = ''
-    fileInputRef.current.click()
-
-    // Browsers don't reliably fire a 'change' event when the native file
-    // picker is dismissed via Cancel, so without this, uploadingForId
-    // would stay stuck forever and the button would be frozen on
-    // "Uploading...". Instead, listen for the window regaining focus
-    // (which happens whether the dialog was cancelled OR a file was
-    // picked), then check shortly after whether onChange actually ran.
-    function handleWindowFocus() {
-      window.removeEventListener('focus', handleWindowFocus)
-      // Give onChange a brief moment to fire first, in case a file WAS
-      // selected -- 'change' and 'focus' don't fire in a guaranteed
-      // order across browsers.
-      setTimeout(() => {
-        if (!fileWasSelectedRef.current) {
-          setUploadingForId(null)
-        }
-      }, 300)
-    }
-    window.addEventListener('focus', handleWindowFocus)
-  }
-
-  async function handlePosterFileSelected(event) {
-    const file = event.target.files[0]
-    event.target.value = '' // reset so picking the same file twice still fires onChange
-    if (!file) return
-    fileWasSelectedRef.current = true
-
-    setError('')
-    const movieId = uploadingForId
-    try {
-      await api.uploadMoviePoster(movieId, file)
-      loadMovies()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setUploadingForId(null)
     }
   }
 
@@ -187,8 +193,54 @@ function AdminMoviesPage() {
             onChange={(e) => setForm({ ...form, release_date: e.target.value })}
           />
         </div>
+
         <div className="field">
-          <label>Poster URL (optional -- or upload one after saving, below)</label>
+          <label>Poster image</label>
+          <div className="poster-field">
+            {posterPreview ? (
+              <div className="poster-field-preview">
+                <img src={posterPreview} alt="Selected poster preview" />
+              </div>
+            ) : (
+              // key remounts PosterImage when the URL changes, so a broken
+              // intermediate URL (hidden by its onError) can't stay hidden.
+              <PosterImage
+                key={form.poster_url}
+                posterUrl={form.poster_url}
+                title=""
+                className="poster-field-preview"
+              />
+            )}
+            <div className="poster-field-controls">
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => fileInputRef.current.click()}
+              >
+                {posterFile ? 'Change image' : 'Choose image'}
+              </button>
+              {posterFile && (
+                <>
+                  <p className="poster-field-hint">{posterFile.name}</p>
+                  <button type="button" className="link-btn danger" onClick={() => setPosterFile(null)}>
+                    Remove
+                  </button>
+                </>
+              )}
+              <p className="poster-field-hint">JPEG, PNG or WEBP, up to 5 MB. Uploaded when you save.</p>
+            </div>
+          </div>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            ref={fileInputRef}
+            onChange={handlePosterFileChange}
+            style={{ display: 'none' }}
+          />
+        </div>
+
+        <div className="field">
+          <label>Poster URL (optional -- replaced if you upload an image above)</label>
           <input
             className="input"
             value={form.poster_url}
@@ -245,14 +297,6 @@ function AdminMoviesPage() {
                   <td>{movie.duration} min</td>
                   <td style={{ whiteSpace: 'nowrap' }}>
                     <button onClick={() => startEdit(movie)} className="link-btn" style={{ marginRight: '0.75rem' }}>Edit</button>
-                    <button
-                      onClick={() => triggerPosterUpload(movie.id)}
-                      disabled={uploadingForId === movie.id}
-                      className="link-btn"
-                      style={{ marginRight: '0.75rem' }}
-                    >
-                      {uploadingForId === movie.id ? 'Uploading...' : 'Upload Poster'}
-                    </button>
                     <button onClick={() => handleDelete(movie.id)} className="link-btn danger">Delete</button>
                   </td>
                 </tr>
@@ -261,17 +305,6 @@ function AdminMoviesPage() {
           </table>
         </div>
       )}
-
-      {/* One shared, hidden file input for every row's "Upload Poster"
-          button -- triggerPosterUpload() records which movie it's for,
-          then simulates a click so the browser's native file picker opens. */}
-      <input
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        ref={fileInputRef}
-        onChange={handlePosterFileSelected}
-        style={{ display: 'none' }}
-      />
     </div>
   )
 }
