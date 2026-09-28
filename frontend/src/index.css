@@ -454,21 +454,6 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 .confirmation-details dd { margin: 0; }
 .confirmation-actions { display: flex; justify-content: space-between; margin-top: 1.5rem; font-size: 0.9rem; }
 
-/* ============================================================
-   Admin dashboard
-   ============================================================ */
-.admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
-.admin-card {
-  display: block;
-  padding: 1.75rem 1.25rem;
-  text-align: center;
-  text-decoration: none;
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 1.05rem;
-}
-.admin-card:hover { border-color: var(--accent); }
 
 /* ============================================================
    Day filter pills
@@ -1523,4 +1508,118 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   text-transform: uppercase;
   color: var(--muted);
   margin: 0 0 0.5rem;
+}
+
+
+.admin-shell {
+  display: flex;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  position: sticky;
+  top: 0;
+  width: 250px;
+  height: 100vh;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.75rem 1rem 1.25rem;
+  background: var(--paper);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+.admin-sidebar-brand {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-decoration: none;
+  margin: 0 0.75rem 2rem;
+}
+.admin-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+.admin-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.75rem;
+  border-radius: var(--radius-sm);
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.admin-sidebar-link:hover {
+  background: var(--canvas);
+  color: var(--ink);
+}
+.admin-sidebar-link-active {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-weight: 600;
+}
+
+.admin-sidebar-footer {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+.admin-sidebar-user {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0 0.75rem 0.5rem;
+}
+.admin-sidebar-logout {
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.admin-content {
+  flex: 1;
+  min-width: 0;
+}
+/* Mọi trang admin dùng chung một độ rộng và căn giữa trong vùng nội dung,
+   thay vì mỗi trang tự chọn 640px / 960px như trước. */
+.admin-content .page,
+.admin-content .page-medium {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2.5rem 2.5rem 4rem;
+}
+/* .admin-content .form-card {
+  max-width: 640px;
+} */
+
+@media (max-width: 800px) {
+  .admin-shell {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .admin-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 1rem;
+  }
+  .admin-sidebar-brand { margin-bottom: 1rem; }
+  .admin-sidebar-nav { flex-direction: row; overflow-x: auto; }
+  .admin-sidebar-link { white-space: nowrap; }
+  .admin-sidebar-footer { margin-top: 0.5rem; }
+  .admin-content .page,
+  .admin-content .page-medium {
+    padding: 1.5rem 1rem 3rem;
+  }
 }

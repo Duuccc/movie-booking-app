@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -12,13 +12,13 @@ import SeatSelectionPage from './pages/SeatSelectionPage'
 import BookingConfirmationPage from './pages/BookingConfirmationPage'
 import CheckoutPage from './pages/CheckoutPage'
 import MyBookingsPage from './pages/MyBookingsPage'
-import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminMoviesPage from './pages/AdminMoviesPage'
 import AdminTheatersPage from './pages/AdminTheatersPage'
 import AdminShowtimesPage from './pages/AdminShowtimesPage'
 import AdminBookingsPage from './pages/AdminBookingsPage'
 import ShowtimesPage from './pages/ShowtimesPage'
 import AdminAnalyticsPage from './pages/AdminAnalyticsPage'
+import AdminLayout from './components/AdminLayout'
 
 function App() {
   return (
@@ -59,54 +59,23 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route
             path="/admin"
             element={
               <AdminRoute>
-                <AdminDashboardPage />
+                <AdminLayout />
               </AdminRoute>
             }
-          />
-          <Route
-            path="/admin/movies"
-            element={
-              <AdminRoute>
-                <AdminMoviesPage />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/theaters"
-            element={
-              <AdminRoute>
-                <AdminTheatersPage />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/showtimes"
-            element={
-              <AdminRoute>
-                <AdminShowtimesPage />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/bookings"
-            element={
-              <AdminRoute>
-                <AdminBookingsPage />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/analytics"
-            element={
-              <AdminRoute>
-                <AdminAnalyticsPage />
-              </AdminRoute>
-            }
-          />
+          >
+            <Route index element={<Navigate to="analytics" replace />} />
+            <Route path="analytics" element={<AdminAnalyticsPage />} />
+            <Route path="movies" element={<AdminMoviesPage />} />
+            <Route path="theaters" element={<AdminTheatersPage />} />
+            <Route path="showtimes" element={<AdminShowtimesPage />} />
+            <Route path="bookings" element={<AdminBookingsPage />} />
+          </Route>
+
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
         </Routes>
