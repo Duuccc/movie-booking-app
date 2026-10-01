@@ -45,6 +45,7 @@ def _validate_movie_and_theater(movie_id: int, theater_id: int, db: Session) -> 
 def list_showtimes(
     date: Optional[date_type] = None,
     theater_id: Optional[int] = None,
+    movie_id: Optional[int] = None,
     db: Session = Depends(get_db),
 ):
     """
@@ -61,6 +62,9 @@ def list_showtimes(
 
     if theater_id is not None:
         query = query.filter(Showtime.theater_id == theater_id)
+
+    if movie_id is not None:
+        query = query.filter(Showtime.movie_id == movie_id)
 
     if date is not None:
         day_start = datetime.combine(date, datetime.min.time(), tzinfo=VN_TZ)

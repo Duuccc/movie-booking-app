@@ -20,15 +20,29 @@ function AdminShowtimesPage() {
   const [batchError, setBatchError] = useState('')
   const [batchSubmitting, setBatchSubmitting] = useState(false)
 
-  const { pageItems, paginationProps } = usePagination(showtimes)
+  const [filterMovieId, setFilterMovieId] = useState('')
+  const [filterTheaterId, setFilterTheaterId] = useState('')
+  const [filterDateFrom, setFilterDateFrom] = useState('')
+  const [filterDateTo, setFilterDateTo] = useState('')
+
+  const dateFilteredShowtimes = filterDateTo
+    ? showtimes.filter((s) => s.start_time.slice(0, 10) <= filterDateTo)
+    : showtimes
+
+  const { pageItems, paginationProps } = usePagination(dateFilteredShowtimes)
 
   useEffect(() => {
     loadAll()
-  }, [])
+  }, [filterMovieId, filterTheaterId, filterDateFrom])
 
   function loadAll() {
     setLoading(true)
-    Promise.all([api.listShowtimes(), api.listMovies(), api.listTheaters()])
+    Promise.all([
+      api.listShowtimes({
+        movieId: filterMovieId || undefined,
+        theaterId: filterTheaterId || undefined,
+        date: filterDateFrom || undefined
+      }), api.listMovies(), api.listTheaters()])
       .then(([showtimesData, moviesData, theatersData]) => {
         setShowtimes(showtimesData)
         setMovies(moviesData)
@@ -296,6 +310,56 @@ function AdminShowtimesPage() {
         <p className="status-message">Loading showtimes...</p>
       ) : (
         <>
+          <div className="admin-filter-bar">
+            <select
+              className="input"
+              value={filterMovieId}
+              onChange={(e) => setFilterMovieId(e.target.value)}
+            >
+              <option value="">All movies</option>
+              {movies.map((m) => (
+                <option key={m.id} value={m.id}>{m.title}</option>
+              ))}
+            </select>
+            <select
+              className="input"
+              value={filterTheaterId}
+              onChange={(e) => setFilterTheaterId(e.target.value)}
+            >
+              <option value="">All theaters</option>
+              {theaters.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+            <input
+              type="date"
+              className="input"
+              value={filterDateFrom}
+              onChange={(e) => setFilterDateFrom(e.target.value)}
+              placeholder="From date"
+            />
+            <input
+              type="date"
+              className="input"
+              value={filterDateTo}
+              onChange={(e) => setFilterDateTo(e.target.value)}
+              placeholder="To date"
+            />
+            {(filterMovieId || filterTheaterId || filterDateFrom || filterDateTo) && (
+              <button
+                type="button"
+                className="link-btn"
+                onClick={() => {
+                  setFilterMovieId('')
+                  setFilterTheaterId('')
+                  setFilterDateFrom('')
+                  setFilterDateTo('')
+                }}
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
           <div className="table-wrap">
             <table className="data-table">
               <thead>

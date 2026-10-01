@@ -1725,3 +1725,25 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   line-height: 1;
   padding: 0.3rem 0.6rem;
 }
+
+.admin-filter-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.admin-filter-bar .input {
+  width: auto;
+  min-width: 0;
+  flex: 1 1 0;
+}
+.admin-filter-bar .link-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.admin-table-subtext {
+  font-size: 0.75rem;
+  color: var(--muted);
+}

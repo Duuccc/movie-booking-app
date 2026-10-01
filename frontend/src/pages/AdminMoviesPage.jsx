@@ -20,8 +20,30 @@ function AdminMoviesPage() {
   // the movie is saved first (it needs an id), then the file is uploaded.
   const [posterFile, setPosterFile] = useState(null)
   const [posterPreview, setPosterPreview] = useState(null)
+  const [search, setSearch] = useState('')
+  const [filterGenre, setFilterGenre] = useState('')
   const fileInputRef = useRef(null)
-  const {pageItems, paginationProps} = usePagination(movies)
+
+  const genres = [
+    ...new Set(
+      movies.flatMap((m) =>
+        (m.genre || '')
+          .split(',')
+          .map((g) => g.trim())
+          .filter(Boolean)
+      )
+    ),
+  ].sort()
+
+  const filteredMovies = movies.filter((m) => {
+    const matchesSearch = m.title.toLowerCase().includes(search.trim().toLowerCase())
+    const movieGenres = (m.genre || '').split(',').map((g) => g.trim())
+    const matchesGenre = !filterGenre || movieGenres.includes(filterGenre)
+    return matchesSearch && matchesGenre
+  })
+  
+  const { pageItems, paginationProps } = usePagination(filteredMovies)
+  
 
   useEffect(() => {
     loadMovies()
@@ -275,6 +297,37 @@ function AdminMoviesPage() {
         <p className="status-message">Loading movies...</p>
       ) : (
         <>
+          <div className="admin-filter-bar">
+            <input
+              type="text"
+              className="input"
+              placeholder="Search by title..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <select
+              className="input"
+              value={filterGenre}
+              onChange={(e) => setFilterGenre(e.target.value)}
+            >
+              <option value="">All genres</option>
+              {genres.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+            {(search || filterGenre) && (
+              <button
+                type="button"
+                className="link-btn"
+                onClick={() => {
+                  setSearch('')
+                  setFilterGenre('')
+                }}
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
           <div className="table-wrap">
             <table className="data-table">
               <thead>

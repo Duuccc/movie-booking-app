@@ -13,6 +13,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.booking import Booking
 from app.schemas.booking import BookingOut
+from app.models.user import User
+from app.schemas.user import UserOut 
 from app.auth.dependencies import require_admin
 from app.services.booking_service import serialize_booking
 
@@ -26,3 +28,12 @@ def list_all_bookings(
 ):
     bookings = db.query(Booking).order_by(Booking.created_at.desc()).all()
     return [serialize_booking(b) for b in bookings]
+
+@router.get("/users", response_model=List[UserOut])
+def list_users(db: Session = Depends(get_db), _admin=Depends(require_admin)):
+    """
+    Danh sách user tối giản, phục vụ việc hiển thị tên khách hàng ở
+    trang Admin Bookings (thay vì chỉ có user_id). Không phải trang quản
+    lý user đầy đủ -- chỉ đọc, không có sửa/xoá/đổi role ở đây.
+    """
+    return db.query(User).order_by(User.name).all()

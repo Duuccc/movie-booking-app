@@ -119,10 +119,11 @@ export const api = {
   listTheaters: () => request('/theaters'),
   getTheater: (id) => request(`/theaters/${id}`),
 
-  listShowtimes: ({date, theaterId} = {}) => {
+  listShowtimes: ({date, theaterId, movieId} = {}) => {
     const params = new URLSearchParams()
     if(date) params.set("date", date)
     if(theaterId) params.set("theater_id", theaterId)
+    if(movieId) params.set("movie_id", movieId)
     
     const query = params.toString()
     return request(`/showtimes${query ? `?${query}` : ''}`)
@@ -175,5 +176,6 @@ export const api = {
   },
 
   getAdminAnalytics: () => request("/admin/analytics", {"auth": true}),
-  createShowtimesBatch: (showtimes) => request("/showtimes/batch", {method: "POST", auth: true, body: { showtimes } })
+  createShowtimesBatch: (showtimes) => request("/showtimes/batch", {method: "POST", auth: true, body: { showtimes } }),
+  listAdminUsers: () => request('/admin/users', { auth: true }),
 }
