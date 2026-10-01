@@ -10,8 +10,8 @@ function getPageNumbers(page, total) {
   sorted.forEach((p, i) => {
     if (i > 0) {
       const gap = p - sorted[i - 1]
-      if (gap === 2) result.push(p - 1)
-      else if (gap > 2) result.push('...')
+      // if (gap === 2) result.push(p - 1)
+      if (gap >= 2) result.push('...')
     }
     result.push(p)
   })
