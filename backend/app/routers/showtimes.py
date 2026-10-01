@@ -15,7 +15,7 @@ from app.models.movie import Movie
 from app.models.theater import Theater
 from app.models.seat import Seat
 from app.models.booking_seat import BookingSeat
-from app.schemas.showtime import ShowtimeCreate, ShowtimeUpdate, ShowtimeOut, SeatAvailability, ShowtimeAvailability
+from app.schemas.showtime import ShowtimeBatchCreate, ShowtimeCreate, ShowtimeUpdate, ShowtimeOut, SeatAvailability, ShowtimeAvailability
 from app.auth.dependencies import require_admin
 from app.services.booking_service import showtime_has_confirmed_bookings, expire_bookings_for_showtime, get_availability_for_showtimes, get_seat_price
 
@@ -187,4 +187,39 @@ def get_showtime_seats(showtime_id: int, db: Session = Depends(get_db)):
         )
         for seat in seats
     ]
+
+@router.post("/batch", response_model=List[ShowtimeOut], status_code=status.HTTP_201_CREATED)
+def create_showtimes_batch(
+    payload: ShowtimeBatchCreate,
+    db: Session = Depends(get_db),
+    _admin=Depends(require_admin),
+):
+    """
+    Tạo nhiều showtime trong 1 lần gọi, atomic: nếu bất kỳ dòng nào lỗi
+    (phim/rạp không tồn tại...), rollback toàn bộ, không tạo dòng nào cả.
+    Không cần đặt route này trước "/{showtime_id}" vì đây là POST, còn
+    "/{showtime_id}" chỉ áp dụng cho GET/PUT/DELETE -- hai method khác
+    nhau không tranh chấp đường dẫn.
+    """
+    if not payload.showtimes:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No showtimes provided")
+
+    created = []
+    for i, item in enumerate(payload.showtimes):
+        try:
+            _validate_movie_and_theater(item.movie_id, item.theater_id, db)
+        except HTTPException as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Row {i + 1}: {e.detail}",
+            )
+        showtime = Showtime(**item.model_dump())
+        db.add(showtime)
+        created.append(showtime)
+
+    db.commit()
+    for s in created:
+        db.refresh(s)
+    return created
 

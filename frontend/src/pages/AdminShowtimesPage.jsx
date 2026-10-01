@@ -3,7 +3,8 @@ import { api, formatVnd } from '../services/api'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
 
-const emptyForm = { movie_id: '', theater_id: '', start_time: '', price: '75000', format: "2D" }
+const emptyForm = { movie_id: '', theater_id: '', start_time: '', price: '75000', format: '2D' }
+const emptyBatchRow = { movie_id: '', theater_id: '', start_time: '', price: '75000', format: '2D' }
 
 function AdminShowtimesPage() {
   const [showtimes, setShowtimes] = useState([])
@@ -14,6 +15,11 @@ function AdminShowtimesPage() {
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+
+  const [batchRows, setBatchRows] = useState([{ ...emptyBatchRow }])
+  const [batchError, setBatchError] = useState('')
+  const [batchSubmitting, setBatchSubmitting] = useState(false)
+
   const { pageItems, paginationProps } = usePagination(showtimes)
 
   useEffect(() => {
@@ -39,7 +45,7 @@ function AdminShowtimesPage() {
       theater_id: showtime.theater_id,
       start_time: showtime.start_time.slice(0, 16),
       price: showtime.price,
-      format: showtime.format
+      format: showtime.format,
     })
   }
 
@@ -57,7 +63,7 @@ function AdminShowtimesPage() {
       theater_id: Number(form.theater_id),
       start_time: new Date(form.start_time).toISOString(),
       price: Number(form.price),
-      format: form.format
+      format: form.format,
     }
     try {
       if (editingId) {
@@ -81,6 +87,40 @@ function AdminShowtimesPage() {
       loadAll()
     } catch (err) {
       setError(err.message)
+    }
+  }
+
+  function updateBatchRow(index, field, value) {
+    setBatchRows((rows) => rows.map((r, i) => (i === index ? { ...r, [field]: value } : r)))
+  }
+
+  function addBatchRow() {
+    setBatchRows((rows) => [...rows, { ...emptyBatchRow }])
+  }
+
+  function removeBatchRow(index) {
+    setBatchRows((rows) => rows.filter((_, i) => i !== index))
+  }
+
+  async function handleBatchSubmit(event) {
+    event.preventDefault()
+    setBatchError('')
+    setBatchSubmitting(true)
+    const payload = batchRows.map((r) => ({
+      movie_id: Number(r.movie_id),
+      theater_id: Number(r.theater_id),
+      start_time: new Date(r.start_time).toISOString(),
+      price: Number(r.price),
+      format: r.format,
+    }))
+    try {
+      await api.createShowtimesBatch(payload)
+      setBatchRows([{ ...emptyBatchRow }])
+      loadAll()
+    } catch (err) {
+      setBatchError(err.message)
+    } finally {
+      setBatchSubmitting(false)
     }
   }
 
@@ -166,6 +206,89 @@ function AdminShowtimesPage() {
               Cancel
             </button>
           )}
+        </div>
+      </form>
+
+      <form onSubmit={handleBatchSubmit} className="form-card batch-form" style={{ marginBottom: '1.75rem' }}>
+        <h3 style={{ marginTop: 0 }}>Add Multiple Showtimes</h3>
+        <p className="page-subtitle" style={{ marginBottom: '1rem' }}>
+          Add as many rows as you need, then create them all at once.
+        </p>
+
+        <div className="batch-rows">
+          {batchRows.map((row, index) => (
+            <div key={index} className="batch-row">
+              <select
+                className="input"
+                value={row.movie_id}
+                onChange={(e) => updateBatchRow(index, 'movie_id', e.target.value)}
+                required
+              >
+                <option value="">Movie</option>
+                {movies.map((m) => (
+                  <option key={m.id} value={m.id}>{m.title}</option>
+                ))}
+              </select>
+              <select
+                className="input"
+                value={row.theater_id}
+                onChange={(e) => updateBatchRow(index, 'theater_id', e.target.value)}
+                required
+              >
+                <option value="">Theater</option>
+                {theaters.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+              <input
+                type="datetime-local"
+                className="input"
+                value={row.start_time}
+                onChange={(e) => updateBatchRow(index, 'start_time', e.target.value)}
+                required
+              />
+              <input
+                type="number"
+                step="1000"
+                min="0"
+                className="input"
+                value={row.price}
+                onChange={(e) => updateBatchRow(index, 'price', e.target.value)}
+                required
+              />
+              <select
+                className="input"
+                value={row.format}
+                onChange={(e) => updateBatchRow(index, 'format', e.target.value)}
+                required
+              >
+                <option value="2D">2D</option>
+                <option value="3D">3D</option>
+                <option value="IMAX">IMAX</option>
+              </select>
+              <button
+                type="button"
+                className="link-btn danger batch-row-remove"
+                onClick={() => removeBatchRow(index)}
+                disabled={batchRows.length === 1}
+                title={batchRows.length === 1 ? 'At least one row is required' : 'Remove row'}
+              >
+                &times;
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <button type="button" onClick={addBatchRow} className="btn btn-ghost btn-sm" style={{ marginTop: '0.75rem' }}>
+          + Add Row
+        </button>
+
+        {batchError && <p className="error-text">{batchError}</p>}
+
+        <div style={{ marginTop: '1rem' }}>
+          <button type="submit" disabled={batchSubmitting} className="btn btn-primary">
+            {batchSubmitting ? 'Creating...' : `Create All (${batchRows.length})`}
+          </button>
         </div>
       </form>
 

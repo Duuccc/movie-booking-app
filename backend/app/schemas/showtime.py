@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, ConfigDict
 from app.models.showtime import ShowtimeFormat
@@ -47,3 +47,6 @@ class SeatAvailability(BaseModel):
 class ShowtimeAvailability(BaseModel):
     showtime_id: int
     available_seats: int
+
+class ShowtimeBatchCreate(BaseModel):
+    showtimes: List[ShowtimeCreate]

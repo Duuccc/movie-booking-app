@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../services/api'
 import PosterImage from '../components/PosterImage'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 
 function formatCountdown(seconds) {
   const m = Math.floor(seconds / 60)
@@ -19,6 +21,7 @@ function MyBookingsPage() {
   const [cancellingId, setCancellingId] = useState(null)
   const [countdowns, setCountdowns] = useState({}) // { [bookingId]: secondsLeft }
   const reloadPendingRef = useRef(false) // guards against multiple reload triggers in one tick
+  const { pageItems, paginationProps } = usePagination(bookings)
 
   useEffect(() => {
     loadData()
@@ -96,7 +99,7 @@ function MyBookingsPage() {
   return (
     <div className="page-medium">
       <h1 className="showtimes-select-title">My Bookings</h1>
-      {bookings.map((booking) => {
+      {pageItems.map((booking) => {
         const showtime = showtimesById[booking.showtime_id]
         const movie = showtime ? moviesById[showtime.movie_id] : null
         const theater = showtime ? theatersById[showtime.theater_id] : null
@@ -152,6 +155,7 @@ function MyBookingsPage() {
           </div>
         )
       })}
+      <Pagination {...paginationProps} />
     </div>
   )
 }

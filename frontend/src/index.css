@@ -1707,3 +1707,21 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   padding: 0 0.4rem;
   color: var(--muted);
 }
+
+.batch-form { max-width: none; }
+.batch-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.batch-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1.2fr 1.3fr 0.9fr 0.8fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+.batch-row-remove {
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.3rem 0.6rem;
+}

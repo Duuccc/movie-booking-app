@@ -174,5 +174,6 @@ export const api = {
     return request(`/showtimes/availability?${params.toString()}`)
   },
 
-  getAdminAnalytics: () => request("/admin/analytics", {"auth": true})
+  getAdminAnalytics: () => request("/admin/analytics", {"auth": true}),
+  createShowtimesBatch: (showtimes) => request("/showtimes/batch", {method: "POST", auth: true, body: { showtimes } })
 }
