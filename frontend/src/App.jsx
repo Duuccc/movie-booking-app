@@ -19,6 +19,7 @@ import AdminBookingsPage from './pages/AdminBookingsPage'
 import ShowtimesPage from './pages/ShowtimesPage'
 import AdminAnalyticsPage from './pages/AdminAnalyticsPage'
 import AdminLayout from './components/AdminLayout'
+import AdminPerformancePage from './pages/AdminPerformancePage'
 
 function App() {
   return (
@@ -70,6 +71,7 @@ function App() {
           >
             <Route index element={<Navigate to="analytics" replace />} />
             <Route path="analytics" element={<AdminAnalyticsPage />} />
+            <Route path="performance" element={<AdminPerformancePage />} />
             <Route path="movies" element={<AdminMoviesPage />} />
             <Route path="theaters" element={<AdminTheatersPage />} />
             <Route path="showtimes" element={<AdminShowtimesPage />} />

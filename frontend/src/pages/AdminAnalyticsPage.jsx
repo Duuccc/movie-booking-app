@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
 import { ArrowUp, ArrowDown } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { api, formatVnd, formatVndWithoutCurrency } from '../services/api'
+import { api, formatVnd } from '../services/api'
 
 function formatShortDate(isoDate) {
   return new Date(isoDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
 }
 
+function toDateKey(d) {
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
+}
+
 function ChangeBadge({ value }) {
-  // No previous-period baseline to compare against -- omit the badge
-  // rather than show a misleading number (see get_percent_change).
   if (value === null || value === undefined) return null
   const isUp = value >= 0
   return (
@@ -21,19 +23,29 @@ function ChangeBadge({ value }) {
 }
 
 function AdminAnalyticsPage() {
+  // Mặc định: 30 ngày gần nhất, tính theo lịch VN.
+  const [dateFrom, setDateFrom] = useState(() => {
+    const d = new Date()
+    d.setDate(d.getDate() - 29)
+    return toDateKey(d)
+  })
+  const [dateTo, setDateTo] = useState(() => toDateKey(new Date()))
+
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!dateFrom || !dateTo || dateFrom > dateTo) return
+    setLoading(true)
     api
-      .getAdminAnalytics()
+      .getAdminAnalytics(dateFrom, dateTo)
       .then(setData)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [])
+  }, [dateFrom, dateTo])
 
-  if (loading) return <p className="status-message">Loading analytics...</p>
+  if (loading && !data) return <p className="status-message">Loading analytics...</p>
   if (error) return <p className="status-message error">{error}</p>
   if (!data) return null
 
@@ -43,17 +55,42 @@ function AdminAnalyticsPage() {
   return (
     <div className="page">
       <h1 className="page-title">Analytics</h1>
-      <p className="page-subtitle">Last {data.window_days} days</p>
+
+      <div className="analytics-header">
+        <p className="page-subtitle" style={{ margin: 0 }}>
+          {data.date_from} to {data.date_to}
+        </p>
+        <div className="analytics-date-range">
+          <input
+            type="date"
+            className="input"
+            value={dateFrom}
+            max={dateTo}
+            onChange={(e) => setDateFrom(e.target.value)}
+          />
+          <span className="analytics-date-range-sep">to</span>
+          <input
+            type="date"
+            className="input"
+            value={dateTo}
+            min={dateFrom}
+            max={toDateKey(new Date())}
+            onChange={(e) => setDateTo(e.target.value)}
+          />
+        </div>
+      </div>
 
       <div className="analytics-stats">
         <div className="analytics-stat-card">
-          <p className="analytics-stat-label">Total Revenue </p>
-          <p className="analytics-stat-value" title={formatVnd(data.total_revenue)}>{formatVnd(data.total_revenue)}</p>
+          <p className="analytics-stat-label">Total Revenue</p>
+          <p className="analytics-stat-value" title={formatVnd(data.total_revenue)}>
+            {formatVnd(data.total_revenue)}
+          </p>
           <ChangeBadge value={data.revenue_change_pct} />
         </div>
         <div className="analytics-stat-card">
           <p className="analytics-stat-label">Paid Bookings</p>
-          <p className="analytics-stat-value" title={data.total_bookings}>{data.total_bookings}</p>
+          <p className="analytics-stat-value">{data.total_bookings}</p>
           <ChangeBadge value={data.bookings_change_pct} />
         </div>
         <div className="analytics-stat-card">
@@ -62,13 +99,14 @@ function AdminAnalyticsPage() {
         </div>
         <div className="analytics-stat-card">
           <p className="analytics-stat-label">Average Order Value</p>
-          <p className="analytics-stat-value">{formatVnd(data.average_order_value)}</p>
+          <p className="analytics-stat-value" title={formatVnd(data.average_order_value)}>
+            {formatVnd(data.average_order_value)}
+          </p>
         </div>
         <div className="analytics-stat-card">
           <p className="analytics-stat-label">Cancellation Rate</p>
           <p className="analytics-stat-value">{data.cancellation_rate}%</p>
         </div>
-        
       </div>
 
       <div className="analytics-row">
@@ -103,6 +141,68 @@ function AdminAnalyticsPage() {
         </div>
       </div>
 
+      <div className="card analytics-chart-card" style={{ marginBottom: '1.5rem' }}>
+        <h3 className="analytics-section-title">Revenue by Seat Type</h3>
+        {data.revenue_by_seat_type.length === 0 ? (
+          <p className="status-message">No paid bookings in this window yet.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data.revenue_by_seat_type.map((s) => ({ ...s, label: s.seat_type }))} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v) => `${v / 1000}k`} />
+              <YAxis type="category" dataKey="label" tick={{ fontSize: 12 }} width={70} />
+              <Tooltip formatter={(value) => formatVnd(Math.round(value))} />
+              <Bar dataKey="revenue" fill="var(--success)" radius={[0, 3, 3, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      <div className="card analytics-chart-card" style={{ marginBottom: '1.5rem' }}>
+        <h3 className="analytics-section-title">Revenue by Theater</h3>
+        {data.revenue_by_theater.length === 0 ? (
+          <p className="status-message">No paid bookings in this window yet.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data.revenue_by_theater.map((t) => ({ ...t, label: t.theater_name }))} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v) => `${v / 1000}k`} />
+              <YAxis type="category" dataKey="label" tick={{ fontSize: 12 }} width={120} />
+              <Tooltip formatter={(value) => formatVnd(value)} />
+              <Bar dataKey="revenue" fill="var(--ink-soft)" radius={[0, 3, 3, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      <div className="analytics-row">
+        <div className="card analytics-chart-card">
+          <h3 className="analytics-section-title">Bookings by Hour</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data.peak_hours.map((h) => ({ ...h, label: `${h.hour}h` }))}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={1} />
+              <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="bookings_count" fill="var(--accent)" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="card analytics-chart-card">
+          <h3 className="analytics-section-title">Bookings by Day of Week</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data.bookings_by_weekday}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="weekday" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="bookings_count" fill="var(--gold)" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
       <div className="card analytics-top-movies-card">
         <h3 className="analytics-section-title">Top Movies by Revenue</h3>
         {data.top_movies.length === 0 ? (
@@ -112,7 +212,6 @@ function AdminAnalyticsPage() {
             <thead>
               <tr>
                 <th>Movie</th>
-                <th>Payments</th>
                 <th>Revenue</th>
               </tr>
             </thead>
@@ -120,7 +219,6 @@ function AdminAnalyticsPage() {
               {data.top_movies.map((m) => (
                 <tr key={m.movie_id}>
                   <td>{m.title}</td>
-                  <td>{m.bookings_count}</td>
                   <td>{formatVnd(m.revenue)}</td>
                 </tr>
               ))}

@@ -182,4 +182,13 @@ export const api = {
   getAdminAnalytics: () => request("/admin/analytics", {"auth": true}),
   createShowtimesBatch: (showtimes) => request("/showtimes/batch", {method: "POST", auth: true, body: { showtimes } }),
   listAdminUsers: () => request('/admin/users', { auth: true }),
+  getAdminAnalytics: (dateFrom, dateTo) =>
+    request(`/admin/analytics?date_from=${dateFrom}&date_to=${dateTo}`, { auth: true }),
+  getShowtimePerformance: ({ date, theaterId, movieId }) => {
+    const params = new URLSearchParams()
+    params.set('date', date)
+    if (theaterId) params.set('theater_id', theaterId)
+    if (movieId) params.set('movie_id', movieId)
+    return request(`/admin/analytics/showtime-performance?${params.toString()}`, { auth: true })
+  },
 }

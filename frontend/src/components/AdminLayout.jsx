@@ -1,9 +1,10 @@
 import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom'
-import { TrendingUp, Film, Building2, CalendarClock, Ticket, LogOut } from 'lucide-react'
+import { TrendingUp, Film, Building2, CalendarClock, Ticket, LogOut, BarChart3 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 const MENU = [
   { to: '/admin/analytics', label: 'Analytics', icon: TrendingUp },
+  { to: '/admin/performance', label: 'Showtime Performance', icon: BarChart3 },
   { to: '/admin/movies', label: 'Manage Movies', icon: Film },
   { to: '/admin/theaters', label: 'Manage Theaters', icon: Building2 },
   { to: '/admin/showtimes', label: 'Manage Showtimes', icon: CalendarClock },
