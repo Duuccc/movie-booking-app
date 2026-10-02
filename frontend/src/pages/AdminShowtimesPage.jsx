@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
+import { Plus, ListPlus } from 'lucide-react'
 import { api, formatVnd } from '../services/api'
+import Modal from '../components/Modal'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import { Pencil, Trash2 } from 'lucide-react'
 
 const emptyForm = { movie_id: '', theater_id: '', start_time: '', price: '75000', format: '2D' }
 const emptyBatchRow = { movie_id: '', theater_id: '', start_time: '', price: '75000', format: '2D' }
@@ -15,21 +18,17 @@ function AdminShowtimesPage() {
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
 
   const [batchRows, setBatchRows] = useState([{ ...emptyBatchRow }])
   const [batchError, setBatchError] = useState('')
   const [batchSubmitting, setBatchSubmitting] = useState(false)
+  const [batchModalOpen, setBatchModalOpen] = useState(false)
 
   const [filterMovieId, setFilterMovieId] = useState('')
   const [filterTheaterId, setFilterTheaterId] = useState('')
   const [filterDateFrom, setFilterDateFrom] = useState('')
   const [filterDateTo, setFilterDateTo] = useState('')
-
-  const dateFilteredShowtimes = filterDateTo
-    ? showtimes.filter((s) => s.start_time.slice(0, 10) <= filterDateTo)
-    : showtimes
-
-  const { pageItems, paginationProps } = usePagination(dateFilteredShowtimes)
 
   useEffect(() => {
     loadAll()
@@ -41,8 +40,11 @@ function AdminShowtimesPage() {
       api.listShowtimes({
         movieId: filterMovieId || undefined,
         theaterId: filterTheaterId || undefined,
-        date: filterDateFrom || undefined
-      }), api.listMovies(), api.listTheaters()])
+        date: filterDateFrom || undefined,
+      }),
+      api.listMovies(),
+      api.listTheaters(),
+    ])
       .then(([showtimesData, moviesData, theatersData]) => {
         setShowtimes(showtimesData)
         setMovies(moviesData)
@@ -52,8 +54,16 @@ function AdminShowtimesPage() {
       .finally(() => setLoading(false))
   }
 
+  function openAddModal() {
+    setEditingId(null)
+    setForm(emptyForm)
+    setError('')
+    setModalOpen(true)
+  }
+
   function startEdit(showtime) {
     setEditingId(showtime.id)
+    setError('')
     setForm({
       movie_id: showtime.movie_id,
       theater_id: showtime.theater_id,
@@ -61,11 +71,14 @@ function AdminShowtimesPage() {
       price: showtime.price,
       format: showtime.format,
     })
+    setModalOpen(true)
   }
 
-  function cancelEdit() {
+  function closeModal() {
+    setModalOpen(false)
     setEditingId(null)
     setForm(emptyForm)
+    setError('')
   }
 
   async function handleSubmit(event) {
@@ -85,7 +98,7 @@ function AdminShowtimesPage() {
       } else {
         await api.createShowtime(payload)
       }
-      cancelEdit()
+      closeModal()
       loadAll()
     } catch (err) {
       setError(err.message)
@@ -102,6 +115,18 @@ function AdminShowtimesPage() {
     } catch (err) {
       setError(err.message)
     }
+  }
+
+  function openBatchModal() {
+    setBatchRows([{ ...emptyBatchRow }])
+    setBatchError('')
+    setBatchModalOpen(true)
+  }
+
+  function closeBatchModal() {
+    setBatchModalOpen(false)
+    setBatchRows([{ ...emptyBatchRow }])
+    setBatchError('')
   }
 
   function updateBatchRow(index, field, value) {
@@ -129,7 +154,7 @@ function AdminShowtimesPage() {
     }))
     try {
       await api.createShowtimesBatch(payload)
-      setBatchRows([{ ...emptyBatchRow }])
+      closeBatchModal()
       loadAll()
     } catch (err) {
       setBatchError(err.message)
@@ -138,228 +163,82 @@ function AdminShowtimesPage() {
     }
   }
 
+  const dateFilteredShowtimes = filterDateTo
+    ? showtimes.filter((s) => s.start_time.slice(0, 10) <= filterDateTo)
+    : showtimes
+
+  const { pageItems, paginationProps } = usePagination(dateFilteredShowtimes)
+
   const movieTitleById = Object.fromEntries(movies.map((m) => [m.id, m.title]))
   const theaterNameById = Object.fromEntries(theaters.map((t) => [t.id, t.name]))
 
   return (
     <div className="page-medium">
-      <h1 className="page-title">Manage Showtimes</h1>
-
-      <form onSubmit={handleSubmit} className="form-card" style={{ marginBottom: '1.75rem' }}>
-        <h3 style={{ marginTop: 0 }}>{editingId ? 'Edit Showtime' : 'Add Showtime'}</h3>
-        <div className="field">
-          <label>Movie</label>
-          <select
-            className="input"
-            value={form.movie_id}
-            onChange={(e) => setForm({ ...form, movie_id: e.target.value })}
-            required
-          >
-            <option value="">Select a movie</option>
-            {movies.map((movie) => (
-              <option key={movie.id} value={movie.id}>{movie.title}</option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label>Theater</label>
-          <select
-            className="input"
-            value={form.theater_id}
-            onChange={(e) => setForm({ ...form, theater_id: e.target.value })}
-            required
-          >
-            <option value="">Select a theater</option>
-            {theaters.map((theater) => (
-              <option key={theater.id} value={theater.id}>{theater.name}</option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label>Start Time</label>
-          <input
-            type="datetime-local"
-            className="input"
-            value={form.start_time}
-            onChange={(e) => setForm({ ...form, start_time: e.target.value })}
-            required
-          />
-        </div>
-        <div className="field">
-          <label>Price (VND)</label>
-          <input
-            type="number"
-            step="1000"
-            min="0"
-            className="input"
-            value={form.price}
-            onChange={(e) => setForm({ ...form, price: e.target.value })}
-            required
-          />
-        </div>
-        <div className="field">
-          <label>Format</label>
-          <select
-            className="input"
-            value={form.format}
-            onChange={(e) => setForm({ ...form, format: e.target.value })}
-            required
-          >
-            <option value="2D">2D</option>
-            <option value="3D">3D</option>
-            <option value="IMAX">IMAX</option>
-          </select>
-        </div>
-        {error && <p className="error-text">{error}</p>}
+      <div className="admin-page-header">
+        <h1 className="page-title">Manage Showtimes</h1>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button type="submit" disabled={submitting} className="btn btn-primary">
-            {submitting ? 'Saving...' : editingId ? 'Save Changes' : 'Add Showtime'}
+          <button type="button" className="btn btn-ghost" onClick={openBatchModal}>
+            <ListPlus size={16} /> Add Multiple
           </button>
-          {editingId && (
-            <button type="button" onClick={cancelEdit} className="btn btn-ghost">
-              Cancel
-            </button>
-          )}
+          <button type="button" className="btn btn-primary" onClick={openAddModal}>
+            <Plus size={16} /> Add Showtime
+          </button>
         </div>
-      </form>
+      </div>
 
-      <form onSubmit={handleBatchSubmit} className="form-card batch-form" style={{ marginBottom: '1.75rem' }}>
-        <h3 style={{ marginTop: 0 }}>Add Multiple Showtimes</h3>
-        <p className="page-subtitle" style={{ marginBottom: '1rem' }}>
-          Add as many rows as you need, then create them all at once.
-        </p>
-
-        <div className="batch-rows">
-          {batchRows.map((row, index) => (
-            <div key={index} className="batch-row">
-              <select
-                className="input"
-                value={row.movie_id}
-                onChange={(e) => updateBatchRow(index, 'movie_id', e.target.value)}
-                required
-              >
-                <option value="">Movie</option>
-                {movies.map((m) => (
-                  <option key={m.id} value={m.id}>{m.title}</option>
-                ))}
-              </select>
-              <select
-                className="input"
-                value={row.theater_id}
-                onChange={(e) => updateBatchRow(index, 'theater_id', e.target.value)}
-                required
-              >
-                <option value="">Theater</option>
-                {theaters.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
-              <input
-                type="datetime-local"
-                className="input"
-                value={row.start_time}
-                onChange={(e) => updateBatchRow(index, 'start_time', e.target.value)}
-                required
-              />
-              <input
-                type="number"
-                step="1000"
-                min="0"
-                className="input"
-                value={row.price}
-                onChange={(e) => updateBatchRow(index, 'price', e.target.value)}
-                required
-              />
-              <select
-                className="input"
-                value={row.format}
-                onChange={(e) => updateBatchRow(index, 'format', e.target.value)}
-                required
-              >
-                <option value="2D">2D</option>
-                <option value="3D">3D</option>
-                <option value="IMAX">IMAX</option>
-              </select>
-              <button
-                type="button"
-                className="link-btn danger batch-row-remove"
-                onClick={() => removeBatchRow(index)}
-                disabled={batchRows.length === 1}
-                title={batchRows.length === 1 ? 'At least one row is required' : 'Remove row'}
-              >
-                &times;
-              </button>
-            </div>
+      <div className="admin-filter-bar">
+        <select
+          className="input"
+          value={filterMovieId}
+          onChange={(e) => setFilterMovieId(e.target.value)}
+        >
+          <option value="">All movies</option>
+          {movies.map((m) => (
+            <option key={m.id} value={m.id}>{m.title}</option>
           ))}
-        </div>
-
-        <button type="button" onClick={addBatchRow} className="btn btn-ghost btn-sm" style={{ marginTop: '0.75rem' }}>
-          + Add Row
-        </button>
-
-        {batchError && <p className="error-text">{batchError}</p>}
-
-        <div style={{ marginTop: '1rem' }}>
-          <button type="submit" disabled={batchSubmitting} className="btn btn-primary">
-            {batchSubmitting ? 'Creating...' : `Create All (${batchRows.length})`}
+        </select>
+        <select
+          className="input"
+          value={filterTheaterId}
+          onChange={(e) => setFilterTheaterId(e.target.value)}
+        >
+          <option value="">All theaters</option>
+          {theaters.map((t) => (
+            <option key={t.id} value={t.id}>{t.name}</option>
+          ))}
+        </select>
+        <input
+          type="date"
+          className="input"
+          value={filterDateFrom}
+          onChange={(e) => setFilterDateFrom(e.target.value)}
+        />
+        <input
+          type="date"
+          className="input"
+          value={filterDateTo}
+          onChange={(e) => setFilterDateTo(e.target.value)}
+        />
+        {(filterMovieId || filterTheaterId || filterDateFrom || filterDateTo) && (
+          <button
+            type="button"
+            className="link-btn"
+            onClick={() => {
+              setFilterMovieId('')
+              setFilterTheaterId('')
+              setFilterDateFrom('')
+              setFilterDateTo('')
+            }}
+          >
+            Clear filters
           </button>
-        </div>
-      </form>
+        )}
+      </div>
 
       {loading ? (
         <p className="status-message">Loading showtimes...</p>
       ) : (
         <>
-          <div className="admin-filter-bar">
-            <select
-              className="input"
-              value={filterMovieId}
-              onChange={(e) => setFilterMovieId(e.target.value)}
-            >
-              <option value="">All movies</option>
-              {movies.map((m) => (
-                <option key={m.id} value={m.id}>{m.title}</option>
-              ))}
-            </select>
-            <select
-              className="input"
-              value={filterTheaterId}
-              onChange={(e) => setFilterTheaterId(e.target.value)}
-            >
-              <option value="">All theaters</option>
-              {theaters.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
-            <input
-              type="date"
-              className="input"
-              value={filterDateFrom}
-              onChange={(e) => setFilterDateFrom(e.target.value)}
-              placeholder="From date"
-            />
-            <input
-              type="date"
-              className="input"
-              value={filterDateTo}
-              onChange={(e) => setFilterDateTo(e.target.value)}
-              placeholder="To date"
-            />
-            {(filterMovieId || filterTheaterId || filterDateFrom || filterDateTo) && (
-              <button
-                type="button"
-                className="link-btn"
-                onClick={() => {
-                  setFilterMovieId('')
-                  setFilterTheaterId('')
-                  setFilterDateFrom('')
-                  setFilterDateTo('')
-                }}
-              >
-                Clear filters
-              </button>
-            )}
-          </div>
           <div className="table-wrap">
             <table className="data-table">
               <thead>
@@ -381,8 +260,12 @@ function AdminShowtimesPage() {
                     <td>{formatVnd(showtime.price)}</td>
                     <td>{showtime.format}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>
-                      <button onClick={() => startEdit(showtime)} className="link-btn" style={{ marginRight: '0.75rem' }}>Edit</button>
-                      <button onClick={() => handleDelete(showtime.id)} className="link-btn danger">Delete</button>
+                      <button onClick={() => startEdit(showtime)} className="icon-btn" aria-label='Edit'>
+                        <Pencil size={16} strokeWidth={1.75} />
+                      </button>
+                      <button onClick={() => handleDelete(showtime.id)} className="icon-btn icon-btn-danger" aria-label='Delete'>
+                        <Trash2 size={16} strokeWidth={1.75} />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -391,6 +274,173 @@ function AdminShowtimesPage() {
           </div>
           <Pagination {...paginationProps} />
         </>
+      )}
+
+      {modalOpen && (
+        <Modal title={editingId ? 'Edit Showtime' : 'Add Showtime'} onClose={closeModal}>
+          <form onSubmit={handleSubmit}>
+            <div className="field">
+              <label>Movie</label>
+              <select
+                className="input"
+                value={form.movie_id}
+                onChange={(e) => setForm({ ...form, movie_id: e.target.value })}
+                required
+              >
+                <option value="">Select a movie</option>
+                {movies.map((movie) => (
+                  <option key={movie.id} value={movie.id}>{movie.title}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Theater</label>
+              <select
+                className="input"
+                value={form.theater_id}
+                onChange={(e) => setForm({ ...form, theater_id: e.target.value })}
+                required
+              >
+                <option value="">Select a theater</option>
+                {theaters.map((theater) => (
+                  <option key={theater.id} value={theater.id}>{theater.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Start Time</label>
+              <input
+                type="datetime-local"
+                className="input"
+                value={form.start_time}
+                onChange={(e) => setForm({ ...form, start_time: e.target.value })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Price (VND)</label>
+              <input
+                type="number"
+                step="1000"
+                min="0"
+                className="input"
+                value={form.price}
+                onChange={(e) => setForm({ ...form, price: e.target.value })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Format</label>
+              <select
+                className="input"
+                value={form.format}
+                onChange={(e) => setForm({ ...form, format: e.target.value })}
+                required
+              >
+                <option value="2D">2D</option>
+                <option value="3D">3D</option>
+                <option value="IMAX">IMAX</option>
+              </select>
+            </div>
+            {error && <p className="error-text">{error}</p>}
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button type="submit" disabled={submitting} className="btn btn-primary">
+                {submitting ? 'Saving...' : editingId ? 'Save Changes' : 'Add Showtime'}
+              </button>
+              <button type="button" onClick={closeModal} className="btn btn-ghost">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {batchModalOpen && (
+        <Modal title="Add Multiple Showtimes" onClose={closeBatchModal} wide>
+          <form onSubmit={handleBatchSubmit}>
+            <p className="page-subtitle" style={{ marginBottom: '1rem' }}>
+              Add as many rows as you need, then create them all at once.
+            </p>
+            <div className="batch-rows">
+              {batchRows.map((row, index) => (
+                <div key={index} className="batch-row">
+                  <select
+                    className="input"
+                    value={row.movie_id}
+                    onChange={(e) => updateBatchRow(index, 'movie_id', e.target.value)}
+                    required
+                  >
+                    <option value="">Movie</option>
+                    {movies.map((m) => (
+                      <option key={m.id} value={m.id}>{m.title}</option>
+                    ))}
+                  </select>
+                  <select
+                    className="input"
+                    value={row.theater_id}
+                    onChange={(e) => updateBatchRow(index, 'theater_id', e.target.value)}
+                    required
+                  >
+                    <option value="">Theater</option>
+                    {theaters.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="datetime-local"
+                    className="input"
+                    value={row.start_time}
+                    onChange={(e) => updateBatchRow(index, 'start_time', e.target.value)}
+                    required
+                  />
+                  <input
+                    type="number"
+                    step="1000"
+                    min="0"
+                    className="input"
+                    value={row.price}
+                    onChange={(e) => updateBatchRow(index, 'price', e.target.value)}
+                    required
+                  />
+                  <select
+                    className="input"
+                    value={row.format}
+                    onChange={(e) => updateBatchRow(index, 'format', e.target.value)}
+                    required
+                  >
+                    <option value="2D">2D</option>
+                    <option value="3D">3D</option>
+                    <option value="IMAX">IMAX</option>
+                  </select>
+                  <button
+                    type="button"
+                    className="link-btn danger batch-row-remove"
+                    onClick={() => removeBatchRow(index)}
+                    disabled={batchRows.length === 1}
+                    title={batchRows.length === 1 ? 'At least one row is required' : 'Remove row'}
+                  >
+                    &times;
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button type="button" onClick={addBatchRow} className="btn btn-ghost btn-sm" style={{ marginTop: '0.75rem' }}>
+              + Add Row
+            </button>
+
+            {batchError && <p className="error-text">{batchError}</p>}
+
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+              <button type="submit" disabled={batchSubmitting} className="btn btn-primary">
+                {batchSubmitting ? 'Creating...' : `Create All (${batchRows.length})`}
+              </button>
+              <button type="button" onClick={closeBatchModal} className="btn btn-ghost">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   )

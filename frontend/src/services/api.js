@@ -30,6 +30,10 @@ export function formatVnd(amount) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
 }
 
+export function formatVndWithoutCurrency(amount) {
+  return new Intl.NumberFormat('vi-VN').format(amount)
+}
+
 export function toVnDateKey(d) {
   return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
 }

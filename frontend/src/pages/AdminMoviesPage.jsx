@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
+import { Plus } from 'lucide-react'
 import { api, isValidYoutubeUrl } from '../services/api'
 import PosterImage from '../components/PosterImage'
+import Modal from '../components/Modal'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import { Pencil, Trash2 } from 'lucide-react'
 
 const emptyForm = { title: '', description: '', duration: '', genre: '', release_date: '', poster_url: '', trailer_url: '' }
-
 const ALLOWED_POSTER_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_POSTER_BYTES = 5 * 1024 * 1024
 
@@ -16,41 +18,21 @@ function AdminMoviesPage() {
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
-  // The chosen poster file is only held here until the form is submitted;
-  // the movie is saved first (it needs an id), then the file is uploaded.
   const [posterFile, setPosterFile] = useState(null)
   const [posterPreview, setPosterPreview] = useState(null)
-  const [search, setSearch] = useState('')
-  const [filterGenre, setFilterGenre] = useState('')
   const fileInputRef = useRef(null)
 
-  const genres = [
-    ...new Set(
-      movies.flatMap((m) =>
-        (m.genre || '')
-          .split(',')
-          .map((g) => g.trim())
-          .filter(Boolean)
-      )
-    ),
-  ].sort()
+  // Modal chỉ hiện khi true -- cả "Add" lẫn "Edit" đều dùng chung modal
+  // này, chỉ khác ở việc editingId có giá trị hay không.
+  const [modalOpen, setModalOpen] = useState(false)
 
-  const filteredMovies = movies.filter((m) => {
-    const matchesSearch = m.title.toLowerCase().includes(search.trim().toLowerCase())
-    const movieGenres = (m.genre || '').split(',').map((g) => g.trim())
-    const matchesGenre = !filterGenre || movieGenres.includes(filterGenre)
-    return matchesSearch && matchesGenre
-  })
-  
-  const { pageItems, paginationProps } = usePagination(filteredMovies)
-  
+  const [search, setSearch] = useState('')
+  const [filterGenre, setFilterGenre] = useState('')
 
   useEffect(() => {
     loadMovies()
   }, [])
 
-  // Local preview of the chosen file. The object URL must be revoked when
-  // the file changes or the page unmounts, or the browser keeps it in memory.
   useEffect(() => {
     if (!posterFile) {
       setPosterPreview(null)
@@ -70,9 +52,18 @@ function AdminMoviesPage() {
       .finally(() => setLoading(false))
   }
 
+  function openAddModal() {
+    setEditingId(null)
+    setForm(emptyForm)
+    setPosterFile(null)
+    setError('')
+    setModalOpen(true)
+  }
+
   function startEdit(movie) {
     setEditingId(movie.id)
     setPosterFile(null)
+    setError('')
     setForm({
       title: movie.title,
       description: movie.description || '',
@@ -82,19 +73,21 @@ function AdminMoviesPage() {
       poster_url: movie.poster_url || '',
       trailer_url: movie.trailer_url || ''
     })
+    setModalOpen(true)
   }
 
-  function cancelEdit() {
+  function closeModal() {
+    setModalOpen(false)
     setEditingId(null)
     setForm(emptyForm)
     setPosterFile(null)
+    setError('')
   }
 
   function handlePosterFileChange(event) {
     const file = event.target.files[0]
-    event.target.value = '' // so picking the same file again still fires onChange
+    event.target.value = ''
     if (!file) return
-
     if (!ALLOWED_POSTER_TYPES.includes(file.type)) {
       setError('Poster must be a JPEG, PNG or WEBP image.')
       return
@@ -124,8 +117,6 @@ function AdminMoviesPage() {
     }
 
     try {
-      // Step 1: save the movie itself (JSON). Both endpoints return the
-      // saved movie, which is where a brand-new movie's id comes from.
       let savedMovie
       try {
         savedMovie = editingId
@@ -136,14 +127,10 @@ function AdminMoviesPage() {
         return
       }
 
-      // Step 2: upload the poster against that id, if one was chosen.
       if (posterFile) {
         try {
           await api.uploadMoviePoster(savedMovie.id, posterFile)
         } catch (err) {
-          // The movie IS saved at this point. Switch the form into edit mode
-          // for it, so pressing Save again retries the upload instead of
-          // creating a duplicate movie.
           setEditingId(savedMovie.id)
           setError(`Movie saved, but the poster upload failed: ${err.message}. Press Save Changes to retry.`)
           loadMovies()
@@ -151,7 +138,7 @@ function AdminMoviesPage() {
         }
       }
 
-      cancelEdit()
+      closeModal()
       loadMovies()
     } finally {
       setSubmitting(false)
@@ -168,166 +155,189 @@ function AdminMoviesPage() {
     }
   }
 
+  const genres = [
+    ...new Set(
+      movies.flatMap((m) =>
+        (m.genre || '')
+          .split(',')
+          .map((g) => g.trim())
+          .filter(Boolean)
+      )
+    ),
+  ].sort()
+
+  const filteredMovies = movies.filter((m) => {
+    const matchesSearch = m.title.toLowerCase().includes(search.trim().toLowerCase())
+    const movieGenres = (m.genre || '').split(',').map((g) => g.trim())
+    const matchesGenre = !filterGenre || movieGenres.includes(filterGenre)
+    return matchesSearch && matchesGenre
+  })
+
+  const { pageItems, paginationProps } = usePagination(filteredMovies)
+
+  const movieForm = (
+    <form onSubmit={handleSubmit}>
+      <div className="field">
+        <label>Title</label>
+        <input
+          className="input"
+          value={form.title}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          required
+        />
+      </div>
+      <div className="field">
+        <label>Description</label>
+        <textarea
+          className="input"
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+        />
+      </div>
+      <div className="field">
+        <label>Duration (minutes)</label>
+        <input
+          type="number"
+          className="input"
+          value={form.duration}
+          onChange={(e) => setForm({ ...form, duration: e.target.value })}
+          required
+        />
+      </div>
+      <div className="field">
+        <label>Genre</label>
+        <input
+          className="input"
+          value={form.genre}
+          onChange={(e) => setForm({ ...form, genre: e.target.value })}
+        />
+      </div>
+      <div className="field">
+        <label>Release Date</label>
+        <input
+          type="date"
+          className="input"
+          value={form.release_date}
+          onChange={(e) => setForm({ ...form, release_date: e.target.value })}
+        />
+      </div>
+
+      <div className="field">
+        <label>Poster image</label>
+        <div className="poster-field">
+          {posterPreview ? (
+            <div className="poster-field-preview">
+              <img src={posterPreview} alt="Selected poster preview" />
+            </div>
+          ) : (
+            <PosterImage
+              key={form.poster_url}
+              posterUrl={form.poster_url}
+              title=""
+              className="poster-field-preview"
+            />
+          )}
+          <div className="poster-field-controls">
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => fileInputRef.current.click()}
+            >
+              {posterFile ? 'Change image' : 'Choose image'}
+            </button>
+            {posterFile && (
+              <>
+                <p className="poster-field-hint">{posterFile.name}</p>
+                <button type="button" className="link-btn danger" onClick={() => setPosterFile(null)}>
+                  Remove
+                </button>
+              </>
+            )}
+            <p className="poster-field-hint">JPEG, PNG or WEBP, up to 5 MB. Uploaded when you save.</p>
+          </div>
+        </div>
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          ref={fileInputRef}
+          onChange={handlePosterFileChange}
+          style={{ display: 'none' }}
+        />
+      </div>
+
+      <div className="field">
+        <label>Poster URL (optional -- replaced if you upload an image above)</label>
+        <input
+          className="input"
+          value={form.poster_url}
+          onChange={(e) => setForm({ ...form, poster_url: e.target.value })}
+        />
+      </div>
+      <div className="field">
+        <label>Trailer URL (YouTube link)</label>
+        <input
+          className="input"
+          value={form.trailer_url}
+          onChange={(e) => setForm({ ...form, trailer_url: e.target.value })}
+        />
+      </div>
+      {error && <p className="error-text">{error}</p>}
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <button type="submit" disabled={submitting} className="btn btn-primary">
+          {submitting ? 'Saving...' : editingId ? 'Save Changes' : 'Add Movie'}
+        </button>
+        <button type="button" onClick={closeModal} className="btn btn-ghost">
+          Cancel
+        </button>
+      </div>
+    </form>
+  )
+
   return (
     <div className="page-medium">
-      <h1 className="page-title">Manage Movies</h1>
+      <div className="admin-page-header">
+        <h1 className="page-title">Manage Movies</h1>
+        <button type="button" className="btn btn-primary" onClick={openAddModal}>
+          <Plus size={16} /> Add Movie
+        </button>
+      </div>
 
-      <form onSubmit={handleSubmit} className="form-card" style={{ marginBottom: '1.75rem' }}>
-        <h3 style={{ marginTop: 0 }}>{editingId ? 'Edit Movie' : 'Add Movie'}</h3>
-        <div className="field">
-          <label>Title</label>
-          <input
-            className="input"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-            required
-          />
-        </div>
-        <div className="field">
-          <label>Description</label>
-          <textarea
-            className="input"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-          />
-        </div>
-        <div className="field">
-          <label>Duration (minutes)</label>
-          <input
-            type="number"
-            className="input"
-            value={form.duration}
-            onChange={(e) => setForm({ ...form, duration: e.target.value })}
-            required
-          />
-        </div>
-        <div className="field">
-          <label>Genre</label>
-          <input
-            className="input"
-            value={form.genre}
-            onChange={(e) => setForm({ ...form, genre: e.target.value })}
-          />
-        </div>
-        <div className="field">
-          <label>Release Date</label>
-          <input
-            type="date"
-            className="input"
-            value={form.release_date}
-            onChange={(e) => setForm({ ...form, release_date: e.target.value })}
-          />
-        </div>
-
-        <div className="field">
-          <label>Poster image</label>
-          <div className="poster-field">
-            {posterPreview ? (
-              <div className="poster-field-preview">
-                <img src={posterPreview} alt="Selected poster preview" />
-              </div>
-            ) : (
-              // key remounts PosterImage when the URL changes, so a broken
-              // intermediate URL (hidden by its onError) can't stay hidden.
-              <PosterImage
-                key={form.poster_url}
-                posterUrl={form.poster_url}
-                title=""
-                className="poster-field-preview"
-              />
-            )}
-            <div className="poster-field-controls">
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={() => fileInputRef.current.click()}
-              >
-                {posterFile ? 'Change image' : 'Choose image'}
-              </button>
-              {posterFile && (
-                <>
-                  <p className="poster-field-hint">{posterFile.name}</p>
-                  <button type="button" className="link-btn danger" onClick={() => setPosterFile(null)}>
-                    Remove
-                  </button>
-                </>
-              )}
-              <p className="poster-field-hint">JPEG, PNG or WEBP, up to 5 MB. Uploaded when you save.</p>
-            </div>
-          </div>
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            ref={fileInputRef}
-            onChange={handlePosterFileChange}
-            style={{ display: 'none' }}
-          />
-        </div>
-
-        <div className="field">
-          <label>Poster URL (optional -- replaced if you upload an image above)</label>
-          <input
-            className="input"
-            value={form.poster_url}
-            onChange={(e) => setForm({ ...form, poster_url: e.target.value })}
-          />
-        </div>
-        <div className="field">
-          <label>Trailer URL (YouTube link)</label>
-          <input
-            className="input"
-            value={form.trailer_url}
-            onChange={(e) => setForm({ ...form, trailer_url: e.target.value })}
-          />
-        </div>
-        {error && <p className="error-text">{error}</p>}
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button type="submit" disabled={submitting} className="btn btn-primary">
-            {submitting ? 'Saving...' : editingId ? 'Save Changes' : 'Add Movie'}
+      <div className="admin-filter-bar">
+        <input
+          type="text"
+          className="input"
+          placeholder="Search by title..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select
+          className="input"
+          value={filterGenre}
+          onChange={(e) => setFilterGenre(e.target.value)}
+        >
+          <option value="">All genres</option>
+          {genres.map((g) => (
+            <option key={g} value={g}>{g}</option>
+          ))}
+        </select>
+        {(search || filterGenre) && (
+          <button
+            type="button"
+            className="link-btn"
+            onClick={() => {
+              setSearch('')
+              setFilterGenre('')
+            }}
+          >
+            Clear filters
           </button>
-          {editingId && (
-            <button type="button" onClick={cancelEdit} className="btn btn-ghost">
-              Cancel
-            </button>
-          )}
-        </div>
-      </form>
+        )}
+      </div>
 
       {loading ? (
         <p className="status-message">Loading movies...</p>
       ) : (
         <>
-          <div className="admin-filter-bar">
-            <input
-              type="text"
-              className="input"
-              placeholder="Search by title..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <select
-              className="input"
-              value={filterGenre}
-              onChange={(e) => setFilterGenre(e.target.value)}
-            >
-              <option value="">All genres</option>
-              {genres.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
-            {(search || filterGenre) && (
-              <button
-                type="button"
-                className="link-btn"
-                onClick={() => {
-                  setSearch('')
-                  setFilterGenre('')
-                }}
-              >
-                Clear filters
-              </button>
-            )}
-          </div>
           <div className="table-wrap">
             <table className="data-table">
               <thead>
@@ -353,16 +363,26 @@ function AdminMoviesPage() {
                     <td>{movie.genre}</td>
                     <td>{movie.duration} min</td>
                     <td style={{ whiteSpace: 'nowrap' }}>
-                      <button onClick={() => startEdit(movie)} className="link-btn" style={{ marginRight: '0.75rem' }}>Edit</button>
-                      <button onClick={() => handleDelete(movie.id)} className="link-btn danger">Delete</button>
+                      <button onClick={() => startEdit(movie)} className="icon-btn" aria-label='Edit'>
+                        <Pencil size={16} strokeWidth={1.75} />
+                      </button>
+                      <button onClick={() => handleDelete(movie.id)} className="icon-btn icon-btn-danger" aria-label='Delete'>
+                        <Trash2 size={16} strokeWidth={1.75} />
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <Pagination {...paginationProps}></Pagination>
+          <Pagination {...paginationProps} />
         </>
+      )}
+
+      {modalOpen && (
+        <Modal title={editingId ? 'Edit Movie' : 'Add Movie'} onClose={closeModal}>
+          {movieForm}
+        </Modal>
       )}
     </div>
   )
