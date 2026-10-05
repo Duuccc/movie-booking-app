@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User, UserRole
-from app.schemas.user import UserCreate, UserOut, Token
+from app.schemas.user import UserCreate, UserOut, Token, UserUpdate, PasswordChangeRequest
 from app.auth.password import hash_password, verify_password
 from app.auth.jwt import create_access_token
 from app.auth.dependencies import get_current_user
@@ -65,3 +65,35 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 @router.get("/me", response_model=UserOut)
 def read_current_user(current_user: User = Depends(get_current_user)):
     return current_user
+
+@router.put("/me", response_model=UserOut)
+def update_current_user(
+    payload: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    current_user.name = payload.name
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.put("/me/password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(
+    payload: PasswordChangeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(payload.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+    if payload.current_password == payload.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from the current password",
+        )
+    current_user.password_hash = hash_password(payload.new_password)
+    db.commit()
+    return None

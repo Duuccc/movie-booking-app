@@ -15,6 +15,8 @@ from app.models.booking import Booking, BookingStatus, PaymentStatus
 from app.models.booking_seat import BookingSeat
 from app.schemas.booking import BookingOut, BookingSeatOut
 
+from app.schemas.theater import SeatRowConfig
+
 from datetime import datetime, timezone, timedelta
 
 SEAT_TYPE_SURCHARGE = {
@@ -302,3 +304,36 @@ def expire_booking_if_needed(db: Session, booking_id: int) -> bool:
         return True
 
     return False
+
+def generate_seats(db: Session, theater_id: int, rows: List[SeatRowConfig]) -> None:
+    """
+    Creates seats for a theater from a row layout. Idempotent -- skips
+    any (row, seat_number) that already exists, so calling this again on
+    a theater that already has seats only adds the new ones. This is how
+    "Add more seats to an existing theater" works without ever touching
+    or duplicating seats tied to real bookings.
+    """
+    for row_config in rows:
+        for seat_number in range(1, row_config.seat_count + 1):
+            exists = (
+                db.query(Seat)
+                .filter(
+                    Seat.theater_id == theater_id,
+                    Seat.row == row_config.row,
+                    Seat.seat_number == seat_number,
+                )
+                .first()
+            )
+            if exists:
+                continue
+            db.add(Seat(
+                theater_id=theater_id,
+                row=row_config.row,
+                seat_number=seat_number,
+                seat_type=row_config.seat_type,
+            ))
+    db.commit()
+
+def get_existing_theater_rows(db: Session, theater_id: int) -> set[str]:
+    rows = db.query(Seat.row).filter(Seat.theater_id == theater_id).distinct().all()
+    return {r[0] for r in rows}

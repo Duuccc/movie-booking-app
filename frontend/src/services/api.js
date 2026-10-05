@@ -191,4 +191,17 @@ export const api = {
     if (movieId) params.set('movie_id', movieId)
     return request(`/admin/analytics/showtime-performance?${params.toString()}`, { auth: true })
   },
+
+  generateTheaterSeats: (theaterId, rows) =>
+    request(`/theaters/${theaterId}/seats`, { method: 'POST', auth: true, body: { rows } }),
+  getTheaterSeatSummary: (theaterId) =>
+    request(`/theaters/${theaterId}/seats/summary`, { auth: true }),
+
+  updateProfile: (name) => request('/auth/me', { method: 'PUT', auth: true, body: { name } }),
+  changePassword: (currentPassword, newPassword) =>
+    request('/auth/me/password', {
+      method: 'PUT',
+      auth: true,
+      body: { current_password: currentPassword, new_password: newPassword },
+    }),
 }

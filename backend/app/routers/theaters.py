@@ -12,9 +12,10 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.theater import Theater
-from app.schemas.theater import TheaterCreate, TheaterUpdate, TheaterOut
+from app.models.seat import Seat
+from app.schemas.theater import TheaterCreate, TheaterUpdate, TheaterOut, GenerateSeatsRequest, TheaterSeatSummary
 from app.auth.dependencies import require_admin
-from app.services.booking_service import theater_has_confirmed_bookings
+from app.services.booking_service import theater_has_confirmed_bookings, generate_seats, get_existing_theater_rows
 
 router = APIRouter(prefix="/theaters", tags=["theaters"])
 
@@ -79,3 +80,52 @@ def delete_theater(
     db.delete(theater)
     db.commit()
     return None
+
+@router.post("/{theater_id}/seats", response_model=TheaterSeatSummary, status_code=status.HTTP_201_CREATED)
+def add_theater_seats(
+    theater_id: int,
+    payload: GenerateSeatsRequest,
+    db: Session = Depends(get_db),
+    _admin=Depends(require_admin),
+):
+    theater = db.query(Theater).filter(Theater.id == theater_id).first()
+    if theater is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Theater not found")
+
+    # A row is locked once it exists -- no extending an existing row's
+    # seat count, even by adding new seat numbers within it.
+    existing_rows = get_existing_theater_rows(db, theater_id)
+    requested_rows = [r.row for r in payload.rows]
+
+    duplicates_within_request = {r for r in requested_rows if requested_rows.count(r) > 1}
+    if duplicates_within_request:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Row(s) listed more than once in this request: {', '.join(sorted(duplicates_within_request))}",
+        )
+
+    conflicts = existing_rows & set(requested_rows)
+    if conflicts:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Row(s) already exist and cannot be extended: {', '.join(sorted(conflicts))}",
+        )
+
+    generate_seats(db, theater_id, payload.rows)
+
+    seats = db.query(Seat).filter(Seat.theater_id == theater_id).all()
+    return TheaterSeatSummary(total_seats=len(seats), rows=sorted({s.row for s in seats}))
+
+
+@router.get("/{theater_id}/seats/summary", response_model=TheaterSeatSummary)
+def get_theater_seat_summary(
+    theater_id: int,
+    db: Session = Depends(get_db),
+    _admin=Depends(require_admin),
+):
+    theater = db.query(Theater).filter(Theater.id == theater_id).first()
+    if theater is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Theater not found")
+
+    seats = db.query(Seat).filter(Seat.theater_id == theater_id).all()
+    return TheaterSeatSummary(total_seats=len(seats), rows=sorted({s.row for s in seats}))

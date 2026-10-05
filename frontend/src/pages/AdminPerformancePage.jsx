@@ -28,8 +28,6 @@ function getHour(isoString) {
 function getSummary(rows) {
   if (rows.length === 0) return null
 
-  // Busiest Showtime: không đổi -- vẫn là suất có occupancy % cao nhất,
-  // vì đây là so sánh 1 suất với 1 suất, quy mô ghế không phải vấn đề.
   const busiest = rows.reduce((best, r) => (r.occupancy_pct > best.occupancy_pct ? r : best))
 
   // Top Theater / Top Movie: đổi từ "trung bình occupancy %" sang
@@ -75,9 +73,6 @@ function buildHeatmap(rows) {
   return { theaterNames, hours, cellMap }
 }
 
-// rgb khớp với var(--accent) trong index.css (#b7402b) -- hardcode vì
-// cần nội suy alpha theo occupancy, CSS var() không tiện làm việc này
-// trực tiếp trong inline style.
 function occupancyColor(pct) {
   if (pct === null) return 'transparent'
   const alpha = Math.max(0.08, pct / 100)

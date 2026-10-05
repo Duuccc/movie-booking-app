@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
 
 from app.models.user import UserRole
 
@@ -31,3 +31,26 @@ class Token(BaseModel):
     """Body returned by POST /auth/login."""
     access_token: str
     token_type: str = "bearer"
+
+class UserUpdate(BaseModel):
+    name: str
+
+    @field_validator('name')
+    @classmethod
+    def name_not_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError('Name cannot be blank')
+        return value
+
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+    @field_validator('new_password')
+    @classmethod
+    def new_password_min_length(cls, value: str) -> str:
+        if len(value) < 8:
+            raise ValueError('New password must be at least 8 characters')
+        return value

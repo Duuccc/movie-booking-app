@@ -24,7 +24,8 @@ function Navbar() {
             {user.role === 'ADMIN' && (
               <Link to="/admin" className="navbar-link">Admin</Link>
             )}
-            <span className="navbar-user">{user.name}</span>
+            <Link to="/profile" className="navbar-link">{user.name}</Link>
+            {/* <span className="navbar-user">{user.name}</span> */}
             <button onClick={handleLogout} className="navbar-logout">Logout</button>
           </>
         ) : (

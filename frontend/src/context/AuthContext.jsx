@@ -46,8 +46,14 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  async function refreshUser() {
+    const currentUser = await api.getCurrentUser()
+    setUser(currentUser)
+    return currentUser
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

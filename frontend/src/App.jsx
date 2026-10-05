@@ -20,6 +20,7 @@ import ShowtimesPage from './pages/ShowtimesPage'
 import AdminAnalyticsPage from './pages/AdminAnalyticsPage'
 import AdminLayout from './components/AdminLayout'
 import AdminPerformancePage from './pages/AdminPerformancePage'
+import ProfilePage from './pages/ProfilePage'
 
 function App() {
   return (
@@ -35,6 +36,14 @@ function App() {
             path="/showtimes/:showtimeId/seats"
             element={
                 <SeatSelectionPage />
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
             }
           />
           <Route
