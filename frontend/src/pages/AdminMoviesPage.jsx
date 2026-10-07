@@ -6,6 +6,7 @@ import Modal from '../components/Modal'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
 import { Pencil, Trash2 } from 'lucide-react'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 const emptyForm = { title: '', description: '', duration: '', genre: '', release_date: '', poster_url: '', trailer_url: '' }
 const ALLOWED_POSTER_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -20,6 +21,7 @@ function AdminMoviesPage() {
   const [submitting, setSubmitting] = useState(false)
   const [posterFile, setPosterFile] = useState(null)
   const [posterPreview, setPosterPreview] = useState(null)
+  const [pendingDelete, setPendingDelete] = useState(null)
   const fileInputRef = useRef(null)
 
   // Modal chỉ hiện khi true -- cả "Add" lẫn "Edit" đều dùng chung modal
@@ -145,10 +147,11 @@ function AdminMoviesPage() {
     }
   }
 
-  async function handleDelete(movieId) {
-    if (!window.confirm('Delete this movie? This also removes its showtimes.')) return
+  async function confirmDelete() {
+    const movie = pendingDelete
+    setPendingDelete(null)
     try {
-      await api.deleteMovie(movieId)
+      await api.deleteMovie(movie.id)
       loadMovies()
     } catch (err) {
       setError(err.message)
@@ -366,7 +369,7 @@ function AdminMoviesPage() {
                       <button onClick={() => startEdit(movie)} className="icon-btn" aria-label='Edit'>
                         <Pencil size={16} strokeWidth={1.75} />
                       </button>
-                      <button onClick={() => handleDelete(movie.id)} className="icon-btn icon-btn-danger" aria-label='Delete'>
+                      <button onClick={() => setPendingDelete(movie)} className="icon-btn icon-btn-danger" aria-label='Delete'>
                         <Trash2 size={16} strokeWidth={1.75} />
                       </button>
                     </td>
@@ -383,6 +386,17 @@ function AdminMoviesPage() {
         <Modal title={editingId ? 'Edit Movie' : 'Add Movie'} onClose={closeModal}>
           {movieForm}
         </Modal>
+      )}
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Delete Movie"
+          message={`Delete "${pendingDelete.title}"? This also removes its showtimes. This cannot be undone.`}
+          confirmLabel="Delete Movie"
+          danger
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
       )}
     </div>
   )
