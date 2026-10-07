@@ -27,6 +27,15 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false))
   }, [])
 
+  useEffect(() => {
+    function handleAuthExpired() {
+      localStorage.removeItem('token')
+      setUser(null)
+    }
+    window.addEventListener('auth:expired', handleAuthExpired)
+    return () => window.removeEventListener('auth:expired', handleAuthExpired)
+  }, [])
+  
   async function login(email, password) {
     const { access_token } = await api.login(email, password)
     localStorage.setItem('token', access_token)

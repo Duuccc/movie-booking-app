@@ -62,6 +62,10 @@ function getToken() {
   return localStorage.getItem('token')
 }
 
+function notifyAuthExpired() {
+  window.dispatchEvent(new Event('auth:expired'))
+}
+
 /**
  * Thin wrapper around fetch. Centralizes: base URL, JSON body encoding,
  * attaching the Authorization header when needed, and turning FastAPI's
@@ -90,6 +94,11 @@ async function request(path, { method = 'GET', body, auth = false, form = false 
     } catch {
       // Response wasn't JSON -- fall back to the generic message above.
     }
+
+    if(response.status === 401 && auth){
+      notifyAuthExpired()
+    }
+    
     throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail))
   }
 
