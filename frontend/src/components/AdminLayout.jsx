@@ -1,5 +1,5 @@
 import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom'
-import { TrendingUp, Film, Building2, CalendarClock, Ticket, LogOut, BarChart3 } from 'lucide-react'
+import { TrendingUp, Film, Building2, CalendarClock, Ticket, BarChart3, Users, LogOut } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 const MENU = [
@@ -9,6 +9,7 @@ const MENU = [
   { to: '/admin/theaters', label: 'Manage Theaters', icon: Building2 },
   { to: '/admin/showtimes', label: 'Manage Showtimes', icon: CalendarClock },
   { to: '/admin/bookings', label: 'View Bookings', icon: Ticket },
+  { to: '/admin/users', label: 'Manage Users', icon: Users },
 ]
 
 function AdminLayout() {

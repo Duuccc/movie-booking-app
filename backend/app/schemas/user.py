@@ -54,3 +54,6 @@ class PasswordChangeRequest(BaseModel):
         if len(value) < 8:
             raise ValueError('New password must be at least 8 characters')
         return value
+
+class UserRoleUpdate(BaseModel):
+    role: UserRole

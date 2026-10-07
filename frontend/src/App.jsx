@@ -21,6 +21,7 @@ import AdminAnalyticsPage from './pages/AdminAnalyticsPage'
 import AdminLayout from './components/AdminLayout'
 import AdminPerformancePage from './pages/AdminPerformancePage'
 import ProfilePage from './pages/ProfilePage'
+import AdminUsersPage from './pages/AdminUsersPage'
 
 function App() {
   return (
@@ -85,6 +86,7 @@ function App() {
             <Route path="theaters" element={<AdminTheatersPage />} />
             <Route path="showtimes" element={<AdminShowtimesPage />} />
             <Route path="bookings" element={<AdminBookingsPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
           </Route>
 
           <Route path="/login" element={<LoginPage />} />

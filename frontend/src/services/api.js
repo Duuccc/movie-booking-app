@@ -204,4 +204,8 @@ export const api = {
       auth: true,
       body: { current_password: currentPassword, new_password: newPassword },
     }),
+
+  updateUserRole: (userId, role) =>
+    request(`/admin/users/${userId}/role`, { method: 'PUT', auth: true, body: { role } }),
+  deleteUser: (userId) => request(`/admin/users/${userId}`, { method: 'DELETE', auth: true }),
 }

@@ -1825,14 +1825,14 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   margin-right: 0.4rem;
   background-color: var(--accent-dark);
 }
-.icon-btn:hover {
+/* .icon-btn:hover {
   border-color: var(--ink);
   color: var(--ink);
 }
 .icon-btn-danger:hover {
   border-color: var(--accent);
   color: var(--accent-dark);
-}
+} */
 
 .analytics-stats {
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -2109,4 +2109,39 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 @media (max-width: 760px) {
   .profile-forms { grid-template-columns: 1fr; }
   .profile-header { flex-direction: column; text-align: center; }
+}
+
+.icon-btn:hover:not(:disabled) {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.icon-btn-danger:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.confirm-dialog-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.confirm-dialog-message {
+  line-height: 1.6;
+  margin: 0 0 1.5rem;
+}
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
 }
