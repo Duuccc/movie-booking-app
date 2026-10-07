@@ -5,6 +5,7 @@ import Modal from '../components/Modal'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
 import { Pencil, Trash2 } from 'lucide-react'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 const emptyForm = { movie_id: '', theater_id: '', start_time: '', price: '75000', format: '2D' }
 const emptyBatchRow = { movie_id: '', theater_id: '', start_time: '', price: '75000', format: '2D' }
@@ -29,6 +30,8 @@ function AdminShowtimesPage() {
   const [filterTheaterId, setFilterTheaterId] = useState('')
   const [filterDateFrom, setFilterDateFrom] = useState('')
   const [filterDateTo, setFilterDateTo] = useState('')
+
+  const [pendingDelete, setPendingDelete] = useState(null)
 
   useEffect(() => {
     loadAll()
@@ -107,10 +110,11 @@ function AdminShowtimesPage() {
     }
   }
 
-  async function handleDelete(showtimeId) {
-    if (!window.confirm('Delete this showtime?')) return
+  async function confirmDelete() {
+    const showtime = pendingDelete
+    setPendingDelete(null)
     try {
-      await api.deleteShowtime(showtimeId)
+      await api.deleteShowtime(showtime.id)
       loadAll()
     } catch (err) {
       setError(err.message)
@@ -263,7 +267,7 @@ function AdminShowtimesPage() {
                       <button onClick={() => startEdit(showtime)} className="icon-btn" aria-label='Edit'>
                         <Pencil size={16} strokeWidth={1.75} />
                       </button>
-                      <button onClick={() => handleDelete(showtime.id)} className="icon-btn icon-btn-danger" aria-label='Delete'>
+                      <button onClick={() => setPendingDelete(showtime)} className="icon-btn icon-btn-danger" aria-label="Delete">
                         <Trash2 size={16} strokeWidth={1.75} />
                       </button>
                     </td>
@@ -441,6 +445,17 @@ function AdminShowtimesPage() {
             </div>
           </form>
         </Modal>
+      )}
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Delete Showtime"
+          message={`Delete the ${movieTitleById[pendingDelete.movie_id]} showtime at ${theaterNameById[pendingDelete.theater_id]} on ${new Date(pendingDelete.start_time).toLocaleString()}? This cannot be undone.`}
+          confirmLabel="Delete Showtime"
+          danger
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
       )}
     </div>
   )

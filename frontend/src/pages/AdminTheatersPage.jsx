@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { api } from '../services/api'
 import Modal from '../components/Modal'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 const emptyForm = { name: '', location: '' }
 const emptySeatRow = { row: '', seat_count: '', seat_type: 'STANDARD' }
@@ -14,6 +15,7 @@ function AdminTheatersPage() {
   const [editingId, setEditingId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState(null)
 
   // Used for both the initial layout (new theater) and additional rows
   // (existing theater) -- same shape, same form, different follow-up.
@@ -160,10 +162,11 @@ function AdminTheatersPage() {
     }
   }
 
-  async function handleDelete(theaterId) {
-    if (!window.confirm('Delete this theater? This also removes its seats and showtimes.')) return
+  async function confirmDelete() {
+    const theater = pendingDelete
+    setPendingDelete(null)
     try {
-      await api.deleteTheater(theaterId)
+      await api.deleteTheater(theater.id)
       loadTheaters()
     } catch (err) {
       setError(err.message)
@@ -200,7 +203,7 @@ function AdminTheatersPage() {
                     <button onClick={() => startEdit(theater)} className="icon-btn" aria-label="Edit">
                       <Pencil size={16} strokeWidth={1.75} />
                     </button>
-                    <button onClick={() => handleDelete(theater.id)} className="icon-btn icon-btn-danger" aria-label="Delete">
+                    <button onClick={() => setPendingDelete(theater)} className="icon-btn icon-btn-danger" aria-label="Delete">
                       <Trash2 size={16} strokeWidth={1.75} />
                     </button>
                   </td>
@@ -305,6 +308,17 @@ function AdminTheatersPage() {
             </div>
           </form>
         </Modal>
+      )}
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Delete Theater"
+          message={`Delete "${pendingDelete.name}"? This also removes its seats and showtimes. This cannot be undone.`}
+          confirmLabel="Delete Theater"
+          danger
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
       )}
     </div>
   )
