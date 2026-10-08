@@ -197,7 +197,7 @@ function AdminPerformancePage() {
             </div>
           </div>
 
-          <div className="card performance-heatmap-card">
+          {/* <div className="card performance-heatmap-card">
             <h3 className="analytics-section-title">Occupancy Heatmap</h3>
             <div className="heatmap-scroll">
               <table className="heatmap-table">
@@ -238,7 +238,7 @@ function AdminPerformancePage() {
               </table>
             </div>
             <p className="heatmap-hint">Hover a cell to see which movie it is. Darker = fuller.</p>
-          </div>
+          </div> */}
 
           <div className="table-wrap">
             <table className="data-table">
