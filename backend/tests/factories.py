@@ -9,8 +9,14 @@ from app.models.showtime import ShowtimeFormat
 from app.models.booking import Booking, BookingStatus, PaymentStatus
 from app.models.booking_seat import BookingSeat
 
+from zoneinfo import ZoneInfo
+
 from jose import jwt
 from app.config import settings
+
+import uuid
+
+from app.models.payment import Payment, PaymentMethod
 
 DEFAULT_PASSWORD = "Password123!"
 # bcrypt is deliberately slow (~0.2s per hash). Hash once per test run and
@@ -18,6 +24,13 @@ DEFAULT_PASSWORD = "Password123!"
 _DEFAULT_PASSWORD_HASH = hash_password(DEFAULT_PASSWORD)
 
 DEFAULT_LAYOUT = (("A", 5, SeatType.STANDARD),)
+
+VN_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
+
+
+def vn_time(year, month, day, hour=0, minute=0) -> datetime:
+    """A moment on the Vietnam wall clock (UTC+7), as an aware datetime."""
+    return datetime(year, month, day, hour, minute, tzinfo=VN_TZ)
 
 
 def make_user(db, *, email="user@test.com", name="Test User", role=UserRole.CUSTOMER) -> User:
@@ -36,12 +49,16 @@ def auth_headers(user: User) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-def make_movie(db, *, title="Test Movie") -> Movie:
-    movie = Movie(title=title, description="A test movie", duration=100, genre="Drama")
+def make_movie(db, *, title="Test Movie", release_date=None) -> Movie:
+    movie = Movie(
+        title=title, description="A test movie", duration=100, genre="Drama",
+        release_date=release_date,
+    )
     db.add(movie)
     db.commit()
     db.refresh(movie)
     return movie
+
 
 
 def make_theater(db, *, name="Test Theater", layout=DEFAULT_LAYOUT) -> Theater:
@@ -65,12 +82,14 @@ def seat_ids(db, theater_id: int, *labels: str) -> list[int]:
 
 
 def make_showtime(
-    db, movie, theater, *, starts_in=timedelta(hours=2), price=75000, fmt=ShowtimeFormat.TWO_D
+    db, movie, theater, *, starts_in=timedelta(hours=2), start_time=None,
+    price=75000, fmt=ShowtimeFormat.TWO_D,
 ) -> Showtime:
+    """Pass start_time for an exact moment, or starts_in for 'relative to now'."""
     showtime = Showtime(
         movie_id=movie.id,
         theater_id=theater.id,
-        start_time=datetime.now(timezone.utc) + starts_in,
+        start_time=start_time or datetime.now(timezone.utc) + starts_in,
         price=price,
         format=fmt,
     )

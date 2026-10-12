@@ -28,5 +28,5 @@ class Showtime(Base):
 
     movie = relationship("Movie", back_populates="showtimes")
     theater = relationship("Theater", back_populates="showtimes")
-    bookings = relationship("Booking", back_populates="showtime")
+    bookings = relationship("Booking", back_populates="showtime", cascade="all, delete-orphan")
     booking_seats = relationship("BookingSeat", back_populates="showtime")

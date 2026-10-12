@@ -22,7 +22,7 @@ def test_create_booking_succeeds(client, db_session, showtime, customer):
     assert sorted(s["seat_number"] for s in body["seats"]) == ["A1", "A2"]
 
 
-def test_new_booking_holds_the_seats_for_five_minutes(client, db_session, showtime, customer):
+def test_new_booking_holds_the_seats_for_fifteen_minutes(client, db_session, showtime, customer):
     seats = seat_ids(db_session, showtime.theater_id, "A1")
 
     response = book(client, customer, showtime.id, seats)
