@@ -19,6 +19,7 @@ ADMIN_ONLY = [
     ("POST", "/showtimes"),
     ("POST", "/showtimes/batch"),
     ("DELETE", "/showtimes/1"),
+    ("GET", "/admin/analytics/showtime-performance?date=2030-06-15"),
 ]
 IDS = [f"{method} {path}" for method, path in ADMIN_ONLY]
 

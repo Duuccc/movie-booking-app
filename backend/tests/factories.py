@@ -120,19 +120,19 @@ def book_seats(client, user, showtime_id, seat_id_list):
         headers=auth_headers(user),
     )
 
-
 def make_booking(
     db, user, showtime, seat_id_list, *,
     expires_in=timedelta(minutes=5),
     status=BookingStatus.CONFIRMED,
     payment_status=PaymentStatus.PENDING,
+    created_at=None,
 ) -> Booking:
     """
     Insert a booking straight into the database, bypassing create_booking().
-    That is the point: it can create states the API can't reach quickly, like
-    a hold that expired a minute ago (expires_in=timedelta(minutes=-1)).
-    It prices every seat at showtime.price with no surcharges, so use the API
-    (book_seats) in tests that care about price.
+    Can create states the API can't reach quickly: an expired hold
+    (expires_in=timedelta(minutes=-1)) or a booking created at a chosen moment
+    (created_at). It prices every seat at showtime.price with no surcharges, so
+    use the API (book_seats) in tests that care about price.
     """
     booking = Booking(
         user_id=user.id,
@@ -143,6 +143,8 @@ def make_booking(
         total_amount=len(seat_id_list) * showtime.price,
         expires_at=datetime.now(timezone.utc) + expires_in,
     )
+    if created_at is not None:
+        booking.created_at = created_at   # otherwise the DB default (transaction start) applies
     db.add(booking)
     db.flush()
     for seat_id in seat_id_list:
@@ -150,3 +152,19 @@ def make_booking(
     db.commit()
     db.refresh(booking)
     return booking
+
+
+def make_payment(db, booking, *, paid_at, succeeded=1, amount=None, method=PaymentMethod.MOMO) -> Payment:
+    """One payment attempt at an exact moment. Defaults to paying the booking's full amount."""
+    payment = Payment(
+        booking_id=booking.id,
+        amount=booking.total_amount if amount is None else amount,
+        method=method,
+        reference=f"TEST-{uuid.uuid4().hex[:12].upper()}",
+        succeeded=succeeded,
+        created_at=paid_at,
+    )
+    db.add(payment)
+    db.commit()
+    db.refresh(payment)
+    return payment
