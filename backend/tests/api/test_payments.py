@@ -90,12 +90,13 @@ def test_a_declined_payment_keeps_the_booking_pending_and_the_seats_held(client,
 
 def test_retrying_after_a_decline_succeeds_and_keeps_every_attempt(client, db_session, customer, booking):
     pay(client, customer, booking["id"], simulate_failure=True)
+    pay(client, customer, booking["id"], simulate_failure=True)
     retry = pay(client, customer, booking["id"])
 
     assert retry.json()["succeeded"] == 1
     attempts = payment_rows(db_session, booking["id"])
-    assert [p.succeeded for p in attempts] == [0, 1]   # one row per attempt, in order
-    assert len({p.reference for p in attempts}) == 2   # each attempt has its own reference
+    assert [p.succeeded for p in attempts] == [0, 0, 1]   # one row per attempt, in order
+    assert len({p.reference for p in attempts}) == 3   # each attempt has its own reference
 
 
 # ---------- payments that must be refused ----------
@@ -123,7 +124,7 @@ def test_a_cancelled_booking_cannot_be_paid(client, db_session, customer, bookin
 def test_paying_an_expired_booking_is_rejected_and_releases_the_seats(client, db_session, showtime, customer):
     (a1,) = seat_ids(db_session, showtime.theater_id, "A1")
     expired = make_booking(db_session, customer, showtime, [a1], expires_in=timedelta(minutes=-1))
-    expired_id = expired.id
+    expired_id = expired.id # expired booking id
 
     response = pay(client, customer, expired_id)
 
@@ -143,7 +144,7 @@ def test_a_paid_booking_past_its_hold_time_is_not_treated_as_expired(client, db_
         db_session, customer, showtime, [a1],
         expires_in=timedelta(hours=-1), payment_status=PaymentStatus.PAID,
     )
-    paid_id = paid.id
+    paid_id = paid.id #paid booking id
 
     response = pay(client, customer, paid_id)
 

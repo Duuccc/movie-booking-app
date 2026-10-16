@@ -2,12 +2,12 @@ import os
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 import app.models as _models  # noqa: F401 -- importing registers every model on Base.metadata
-from app.database import Base, get_db
+from app.database import Base, get_db, SessionLocal
 from app.main import app as fastapi_app
 from app.models import UserRole
 
@@ -81,3 +81,35 @@ def admin(db_session):
 def showtime(db_session):
     """A 2D showtime, 2h from now, 75000 VND, in a theater with seats A1..A5 (all standard)."""
     return make_showtime(db_session, make_movie(db_session), make_theater(db_session))
+
+@pytest.fixture()
+def committed_sessions(engine):
+    """
+    For tests that need REAL commits across several connections (concurrency).
+    db_session can't do this: its outer transaction hides everything from every
+    other connection. Yields a session factory, and overrides get_db so each
+    request gets its own session from it, exactly like production. Everything
+    is wiped with TRUNCATE afterwards.
+
+    Don't request this together with `client`: both override get_db.
+    """
+    # mirror the app's own session settings (autoflush, expire_on_commit, ...)
+    app_settings = {k: v for k, v in SessionLocal.kw.items() if k != "bind"}
+    factory = sessionmaker(bind=engine, **app_settings)
+
+    def override_get_db():
+        session = factory()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    fastapi_app.dependency_overrides[get_db] = override_get_db
+    yield factory
+    fastapi_app.dependency_overrides.clear()
+
+    with engine.begin() as conn:
+        # a leaked open session would make TRUNCATE wait forever; fail loudly instead
+        conn.execute(text("SET LOCAL lock_timeout = '5s'"))
+        tables = ", ".join(f'"{t.name}"' for t in Base.metadata.sorted_tables)
+        conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))

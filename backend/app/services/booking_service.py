@@ -141,7 +141,7 @@ def cancel_booking(db: Session, booking: Booking) -> Booking:
     up for that showtime -- but keeps the Booking row itself, marked
     CANCELLED, so "view booking history" still shows it.
     """
-    booking = db.query(Booking).filter(Booking.id == booking.id).with_for_update().first()
+    booking = db.query(Booking).filter(Booking.id == booking.id).populate_existing().with_for_update().first()
 
     if booking is None:
         raise HTTPException(
@@ -283,6 +283,7 @@ def expire_booking_if_needed(db: Session, booking_id: int) -> bool:
     booking = (
         db.query(Booking)
         .filter(Booking.id == booking_id)
+        .populate_existing()
         .with_for_update()
         .first()
     )

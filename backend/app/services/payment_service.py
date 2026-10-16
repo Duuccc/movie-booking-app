@@ -60,6 +60,7 @@ def pay_for_booking(
     booking = (
         db.query(Booking)
         .filter(Booking.id == booking.id)
+        .populate_existing()
         .with_for_update()
         .first()
     )
