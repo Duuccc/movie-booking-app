@@ -1,21 +1,74 @@
+# services:
+#   postgres:
+#     image: postgres:16-alpine
+#     container_name: movie-booking-db
+#     restart: unless-stopped
+#     environment:
+#       POSTGRES_USER: movieuser
+#       POSTGRES_PASSWORD: moviepass
+#       POSTGRES_DB: moviebooking
+#     ports:
+#       - "5433:5432"
+#     volumes:
+#       - movie_booking_pgdata:/var/lib/postgresql/data
+#     healthcheck:
+#       test: ["CMD-SHELL", "pg_isready -U movieuser -d moviebooking"]
+#       interval: 5s
+#       timeout: 5s
+#       retries: 5
+
+# volumes:
+#   movie_booking_pgdata:
+
+
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: movie-booking-db
+  # db:
+  #   image: postgres:16-alpine
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #   volumes:
+  #     - movie_booking_pgdata:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 10
+  #   ports:
+  #     - "127.0.0.1:5433:5432"   # localhost only: for psql and the pytest suite
+
+  backend:
+    build: ./backend
     restart: unless-stopped
     environment:
-      POSTGRES_USER: movieuser
-      POSTGRES_PASSWORD: moviepass
-      POSTGRES_DB: moviebooking
-    ports:
-      - "5433:5432"
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@movie-booking-db:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRE_MINUTES: "60"
     volumes:
-      - movie_booking_pgdata:/var/lib/postgresql/data
+      - poster_uploads:/app/static/posters
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U movieuser -d moviebooking"]
-      interval: 5s
+      # slim images have no curl, so use Python's stdlib
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: /api
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8080:80"
 
 volumes:
-  movie_booking_pgdata:
+  # movie_booking_pgdata:
+  poster_uploads:

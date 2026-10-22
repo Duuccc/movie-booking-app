@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://localhost:8000'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000"
 
 /**
  * poster_url from the backend is either a relative path under our own
