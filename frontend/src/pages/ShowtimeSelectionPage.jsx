@@ -154,6 +154,7 @@ function ShowtimeSelectionPage() {
             <button
               key={d.key}
               type="button"
+              data-testid={`date-tab-${d.key}`}
               onClick={() => updateParams({ date: d.key === DATES[0].key ? null : d.key })}
               className={'date-tab' + (selectedDate === d.key ? ' date-tab-active' : '')}
             >

@@ -1,0 +1,47 @@
+# Disposable stack for end-to-end tests. Own project name, own database, no named
+# volumes, own port: it can never touch the dev database or the main compose
+# project, so `down -v` on it is always safe.
+name: movie-booking-e2e
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: e2e
+      POSTGRES_PASSWORD: e2e
+      POSTGRES_DB: movie_booking_e2e
+    tmpfs:
+      - /var/lib/postgresql/data   # lives in memory: fast, and gone on `down`
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U e2e -d movie_booking_e2e"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg2://e2e:e2e@db:5432/movie_booking_e2e
+      JWT_SECRET: e2e-only-secret
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRE_MINUTES: "60"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: /api
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8081:80"

@@ -11,13 +11,15 @@ from app.auth.password import hash_password
 from app.database import SessionLocal
 from app.models import User, UserRole
 
+import os
+
 
 def main():
     if len(sys.argv) != 3:
         sys.exit('Usage: python -m scripts.create_admin <email> "<name>"')
     email, name = sys.argv[1], sys.argv[2]
 
-    password = getpass.getpass("Password (min 8 characters): ")
+    password = os.environ.get("ADMIN_PASSWORD") or getpass.getpass("Password (min 8 characters): ")
     if len(password) < 8:
         sys.exit("Password must be at least 8 characters.")
 
