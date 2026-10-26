@@ -17,7 +17,7 @@ Mỗi dòng gồm vấn đề, cách giải quyết và cách kiểm chứng.
 | Thanh toán, huỷ và hết hạn chạy chồng lên nhau | `SELECT … FOR UPDATE` rồi kiểm tra lại trạng thái sau khi giữ khoá | Test concurrency cho thấy cách này **chưa đủ**: SQLAlchemy giữ object cũ trong Session nên khách bị trừ tiền hai lần và booking đã trả tiền bị huỷ nhầm. Cách sửa là thêm `populate_existing()` (**chưa xác nhận đã áp dụng**) |
 | Trả tiền hai lần (bấm đúp nút Pay) | Từ chối khi đã PAID; mỗi lần thử ghi một dòng `Payment`; thanh toán bị từ chối giữ booking ở PENDING để thử lại | Test đếm số dòng `Payment` sau mỗi kịch bản |
 | Giá đổi sau khi khách đã đặt | Lưu `total_amount` ngay lúc đặt. Trang xác nhận từng tính lại theo giá hiện tại, đã sửa lại dùng giá đã lưu | Test: đổi giá suất chiếu rồi trả tiền, số tiền vẫn là giá lúc đặt |
-| Ghế bị giữ mãi khi khách bỏ dở | Hold 5 phút, hết hạn tự nhả ghế theo kiểu *lazy expiration* (dọn khi có ai chạm vào suất chiếu), không cần cron | Bộ test hết hạn, dùng booking dựng sẵn với `expires_at` trong quá khứ |
+| Ghế bị giữ mãi khi khách bỏ dở | Hold 15 phút, hết hạn tự nhả ghế theo kiểu *lazy expiration* (dọn khi có ai chạm vào suất chiếu), không cần cron | Bộ test hết hạn, dùng booking dựng sẵn với `expires_at` trong quá khứ |
 | Xoá phim, rạp hay suất làm mất booking của khách | Chặn xoá khi còn booking đang hiệu lực. Test phát hiện thêm lỗi cascade ở ORM (`Showtime.bookings`) gây 500 khi xoá suất chỉ còn booking đã huỷ; sửa bằng `cascade="all, delete-orphan"` (**chưa xác nhận đã áp dụng**) | Ma trận 3 đối tượng × 3 tình trạng booking |
 
 ### B. Bảo mật và phân quyền
@@ -90,19 +90,3 @@ Mỗi dòng gồm vấn đề, cách giải quyết và cách kiểm chứng.
 
 ---
 
-## Phần 2. Báo cáo hôm nay
-
-### Đã làm
-
-- Hoàn thành Milestone 6 (concurrency): test 8 request tranh một ghế, thanh toán đôi và 4 kịch bản xen kẽ. Chạy thật được 4 xanh, 5 đỏ.
-- Chẩn đoán nguyên nhân gốc của 5 test đỏ: `with_for_update()` không ghi đè object đã nằm trong Session, dẫn đến trừ tiền hai lần và huỷ nhầm booking đã trả tiền; đề xuất sửa bằng `populate_existing()` ở 3 hàm.
-- Đối chiếu bộ test với 4 kỹ thuật thiết kế (EP, BVA, Decision Table, State Transition) và chỉ ra các ô còn trống.
-- Viết bổ sung khoảng 20 hàm test (~65 case) lấp các ô trống: biên mật khẩu 7/8 ký tự, biên thời gian hết hạn bằng cách đóng băng đồng hồ, ma trận phân quyền đủ 3 vai trò, test phim và upload poster.
-
-### Đang làm
-
-- Áp dụng `populate_existing()` và chạy lại, đích là 9/9 test concurrency xanh ổn định qua 20 lần lặp.
-
-### Kế hoạch ngày mai
-
-- Milestone 7: viết test frontend bằng Vitest và React Testing Library, rồi thiết lập CI chạy bộ test mỗi lần push.

@@ -111,8 +111,6 @@ def create_booking(db: Session, user_id: int, showtime_id: int, seat_ids: List[i
         showtime_id=showtime_id,
         status=BookingStatus.CONFIRMED,
         total_seats=len(seat_ids),
-        # Snapshot the price now. If an admin edits the showtime price
-        # later, this customer still owes what they agreed to.
         total_amount=sum(get_seat_price(showtime.price, seat.seat_type, showtime.format) for seat in seats),
         expires_at= datetime.now(timezone.utc) + timedelta(minutes=15)
     )
