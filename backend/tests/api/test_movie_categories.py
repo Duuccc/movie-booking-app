@@ -42,8 +42,9 @@ def test_an_unknown_category_falls_back_to_every_movie(client, db_session):
     # Characterization test: documents today's leniency. If you decide that
     # a typo'd category should be a 400, change this test on purpose.
     make_movie(db_session, title="One")
+    make_movie(db_session, title="Two")
 
-    assert titles(client.get("/movies", params={"category": "bogus"})) == ["One"]
+    assert sorted(titles(client.get("/movies", params={"category": "bogus"}))) == ["One", "Two"]
 
 
 # ---------- trending ----------
@@ -57,9 +58,10 @@ def test_trending_ranks_movies_by_booked_seats(client, db_session, customer, oth
     theater = make_theater(db_session)
     popular = make_movie(db_session, title="Popular")
     niche = make_movie(db_session, title="Niche")
-    make_movie(db_session, title="Unbooked")
+    unbooked = make_movie(db_session, title="Unbooked")
     popular_showtime = make_showtime(db_session, popular, theater, starts_in=timedelta(hours=2))
     niche_showtime = make_showtime(db_session, niche, theater, starts_in=timedelta(hours=3))
+    unbooked_showtime = make_showtime(db_session, unbooked, theater, starts_in=timedelta(hours=4))
     a1, a2, a3 = seat_ids(db_session, theater.id, "A1", "A2", "A3")
     make_booking(db_session, customer, popular_showtime, [a1, a2, a3])
     make_booking(db_session, other_customer, niche_showtime, [a1])

@@ -169,9 +169,10 @@ def test_change_password_rejects_reusing_the_current_password(client, customer):
     assert response.status_code == 400
     assert "different" in response.json()["detail"]
 
-
-def test_change_password_rejects_a_too_short_new_password(client, customer):
-    assert change_password(client, customer, DEFAULT_PASSWORD, "short").status_code == 422
+# EP + BVA
+@pytest.mark.parametrize("new_pass", ["", " ", "1", "asdfghj", "123 5 7"])
+def test_change_password_rejects_a_too_short_new_password(client, customer, new_pass):
+    assert change_password(client, customer, DEFAULT_PASSWORD, new_pass).status_code == 422
 
 
 def test_change_password_requires_login(client):

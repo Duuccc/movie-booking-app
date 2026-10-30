@@ -30,6 +30,10 @@ HOLD_CASES = [
 
 # ---------- the service functions ----------
 
+# STATE TRANSITION: 
+# booking -> if expires && payment_status == Pending -> after payment -> expire that booking -> booking status = Cancelled
+#         -> if not expire && payment_status == Pending -> after payment -> succeed -> payment_status becomes Paid && status becomes Confirmed
+#         -> if expires but already paid -> 
 @pytest.mark.parametrize("expires_in, payment_status, expired, expected_status, expected_seats", HOLD_CASES)
 def test_expire_bookings_for_showtime(
     db_session, showtime, customer, expires_in, payment_status, expired, expected_status, expected_seats
@@ -84,7 +88,7 @@ def test_expire_booking_if_needed(
     assert booking.status == expected_status
     assert held_seats(db_session, booking) == expected_seats
 
-
+#edge case unknown booking
 def test_expire_booking_if_needed_ignores_an_unknown_booking(db_session):
     assert expire_booking_if_needed(db_session, 999999) is False
 

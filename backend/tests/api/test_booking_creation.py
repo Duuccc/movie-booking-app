@@ -32,6 +32,11 @@ def test_new_booking_holds_the_seats_for_fifteen_minutes(client, db_session, sho
     assert seconds_left <= 15 * 60
 
 
+# Decision table, charge by seat type and format
+# SEAT TYPE | FORMAT | SURCHARGE
+# STANDARD  | 2D     | +0
+# VIP       | 2D     | +15000
+# STANDARD  | IMAX   | +50000 
 def test_total_includes_seat_type_and_format_surcharges(client, db_session, customer):
     theater = make_theater(
         db_session, layout=(("A", 3, SeatType.STANDARD), ("B", 3, SeatType.VIP))
@@ -46,7 +51,7 @@ def test_total_includes_seat_type_and_format_surcharges(client, db_session, cust
     assert response.status_code == 201
     assert response.json()["total_amount"] == 265000
 
-
+#EDGE CASES
 def test_booking_a_taken_seat_returns_409(client, db_session, showtime, customer, other_customer):
     (a1,) = seat_ids(db_session, showtime.theater_id, "A1")
     assert book(client, customer, showtime.id, [a1]).status_code == 201
